@@ -1,0 +1,41 @@
+# ── Secrets (NEVER commit) ──────────────────────────
+.env
+.env.local
+.env.*.local
+SENSITIVE.env
+*.env
+!.env.example
+
+# ── Node ────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Uploads (runtime files) ─────────────────────────
+uploads/
+!uploads/.gitkeep
+
+# ── Vercel ──────────────────────────────────────────
+.vercel
+
+# ── OS / Editor junk ────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# ── Build artifacts ─────────────────────────────────
+dist/
+build/
+.cache/
+
+# ── Large reference files (not app code) ───────────
+whop_com.html
+Creator_Tracker*.csv
+Creator_Tracker*.xlsx
+build_excel.py
+generate_tracker.py

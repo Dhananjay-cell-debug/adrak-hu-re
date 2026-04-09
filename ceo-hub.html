@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velt Industries — CEO Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=10">
+</head>
+<body>
+
+    <script>
+        const ADMIN_EMAIL = 'dhananjaychitmila@gmail.com';
+        const userEmail = localStorage.getItem('user_email');
+        if (!userEmail || userEmail !== ADMIN_EMAIL) location.href = 'index.html';
+    </script>
+    <div class="app-layout">
+        <!-- ── Sidebar ── -->
+        <aside class="vsb vsb--dark" id="ceo-sidebar">
+
+            <button class="vsb-logo" onclick="toggleSidebar()" title="Toggle sidebar">
+                <div class="vsb-logomark">V</div>
+                <div><div class="vsb-brand">VELT</div><div class="vsb-sub">Industries</div></div>
+            </button>
+
+            <nav class="vsb-nav">
+                <button class="vsb-item active" data-view="overview" onclick="nav('overview')" title="Overview">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    Overview
+                </button>
+
+                <div class="vsb-group">Brands</div>
+                <button class="vsb-item" data-view="brands" onclick="nav('brands')" title="All Brands">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    All Brands
+                </button>
+                <button class="vsb-item" data-view="campaigns" onclick="nav('campaigns')" title="Campaigns">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Campaigns
+                </button>
+
+                <div class="vsb-group">Creators</div>
+                <button class="vsb-item" data-view="creators" onclick="nav('creators')" title="All Creators">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    All Creators
+                </button>
+                <button class="vsb-item" data-view="enrolled" onclick="nav('enrolled')" title="Enrolled">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    Enrolled
+                </button>
+                <button class="vsb-item" data-view="submissions" onclick="nav('submissions')" title="Submissions">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Submissions
+                </button>
+
+                <div class="vsb-divider"></div>
+                <button class="vsb-item" data-view="payouts" onclick="nav('payouts')" title="Payouts">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Payouts
+                </button>
+                <button class="vsb-item" data-view="analytics" onclick="nav('analytics')" title="Analytics">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Analytics
+                </button>
+            </nav>
+
+            <div class="vsb-footer">
+                <div class="vsb-user">
+                    <div class="vsb-avatar" id="csb-avatar">D</div>
+                    <div class="vsb-user-info">
+                        <div class="vsb-user-name" id="csb-user-name">Admin</div>
+                        <div class="vsb-user-role">CEO</div>
+                    </div>
+                </div>
+                <button class="vsb-logout" onclick="logout()" title="Logout">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
+        </aside>
+
+        <main class="viewport">
+            <nav class="navbar" style="border-bottom:1px solid #eee;">
+                <div class="viewport-content" style="display:flex; align-items:center; justify-content:space-between; width:100%; padding:0; height:100%;">
+                    <div style="font-weight:800; font-size:18px;">CEO Hub</div>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <button onclick="logout()" style="font-size:13px; color:#666;">Logout</button>
+                        <div id="user-avatar" style="width:28px; height:28px; background:#3b82f6; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background-size:cover;"></div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="viewport-content">
+
+                <!-- ═══ OVERVIEW ═══ -->
+                <div id="view-overview">
+                    <header style="margin-bottom:48px;">
+                        <div style="display:inline-block; padding:4px 10px; background:#F3F4F6; border-radius:99px; font-size:11px; font-weight:800; color:#3b82f6; letter-spacing:1px; margin-bottom:16px;">COMMAND CENTER</div>
+                        <h1 style="font-size:48px; letter-spacing:-3px; margin-bottom:12px;">Platform Overview</h1>
+                        <p style="color:#666; font-size:16px;" id="overview-sub">Loading...</p>
+                    </header>
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;" id="stats-grid"></div>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <h2 style="font-size:20px; margin-bottom:24px;">Quick Payout</h2>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end;">
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:5px;">Creator Email</label><input id="qp-email" type="email" placeholder="creator@gmail.com" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:5px;">Amount (INR)</label><input id="qp-amount" type="number" placeholder="300" min="1" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:5px;">Campaign</label><input id="qp-campaign" type="text" placeholder="Campaign name" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                            <button onclick="quickPayout()" id="btn-qp" style="background:#111; color:#fff; padding:10px 24px; border-radius:8px; font-weight:700; font-size:14px; font-family:inherit; cursor:pointer; border:none; height:42px;">Send</button>
+                        </div>
+                        <p id="qp-msg" style="margin:12px 0 0 0; font-size:13px; font-weight:500; display:none;"></p>
+                    </section>
+                </div>
+
+                <!-- ═══ BRANDS ═══ -->
+                <div id="view-brands" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Brand Management</h1>
+                    <p style="color:#666; margin-bottom:32px;">Verify brands and manage platform access.</p>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:24px;"><h2 style="font-size:20px; margin:0;">All Brands</h2><button onclick="loadBrands()" style="background:#F3F4F6; border:1px solid #eee; padding:8px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;">Refresh</button></div>
+                        <div id="brands-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                </div>
+
+                <!-- ═══ CAMPAIGNS ═══ -->
+                <div id="view-campaigns" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Campaign Review</h1>
+                    <p style="color:#666; margin-bottom:32px;">Review, approve, modify or reject brand campaigns.</p>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:24px;"><h2 style="font-size:20px; margin:0;">All Campaigns</h2><button onclick="loadCampaigns()" style="background:#F3F4F6; border:1px solid #eee; padding:8px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;">Refresh</button></div>
+                        <div id="campaigns-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                    <!-- Inline editor -->
+                    <section id="campaign-editor" style="display:none; background:#fff; border:1px solid #eee; border-radius:24px; padding:32px; margin-top:24px; max-width:600px;">
+                        <h2 style="font-size:20px; margin-bottom:20px;">Edit Campaign</h2>
+                        <input type="hidden" id="ce-id">
+                        <div style="display:flex; flex-direction:column; gap:14px;">
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Title</label><input id="ce-title" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                                <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Pay/Reel</label><input id="ce-pay" type="number" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                                <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Slots</label><input id="ce-slots" type="number" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                                <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Deadline</label><input id="ce-deadline" type="date" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                            </div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">CEO Notes</label><textarea id="ce-notes" rows="2" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; resize:none; box-sizing:border-box; outline:none;"></textarea></div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Status</label><select id="ce-status" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none; background:#fff;"><option value="pending_review">Pending Review</option><option value="approved">Approved</option><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option><option value="rejected">Rejected</option></select></div>
+                            <div style="display:flex; gap:12px;"><button onclick="saveCampaignEdit()" id="btn-ce" style="background:#111; color:#fff; padding:12px 28px; border-radius:8px; font-weight:700; font-size:14px; font-family:inherit; cursor:pointer; border:none;">Save</button><button onclick="document.getElementById('campaign-editor').style.display='none'" style="padding:12px 20px; border-radius:8px; border:1px solid #ddd; font-weight:600; cursor:pointer; font-family:inherit;">Cancel</button></div>
+                            <p id="ce-msg" style="margin:0; font-size:13px; font-weight:500; display:none;"></p>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ═══ ALL CREATORS ═══ -->
+                <div id="view-creators" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">All Creators</h1>
+                    <p style="color:#666; margin-bottom:32px;">Every creator who signed up. See profile status, socials, and payment info.</p>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <div id="creators-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                </div>
+
+                <!-- ═══ ENROLLED ═══ -->
+                <div id="view-enrolled" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Enrolled Creators</h1>
+                    <p style="color:#666; margin-bottom:32px;">Creators who agreed to campaigns — their IG handles, delivery dates, and progress.</p>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <div id="enrolled-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                </div>
+
+                <!-- ═══ SUBMISSIONS ═══ -->
+                <div id="view-submissions" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Content Submissions</h1>
+                    <p style="color:#666; margin-bottom:32px;">Review creator reels, rate quality, and decide payment amounts.</p>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <div id="submissions-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                    <!-- Review Panel -->
+                    <section id="review-panel" style="display:none; background:#fff; border:1px solid #eee; border-radius:24px; padding:32px; margin-top:24px; max-width:600px;">
+                        <h2 style="font-size:20px; margin-bottom:20px;">Review Submission</h2>
+                        <input type="hidden" id="rv-id">
+                        <div style="display:flex; flex-direction:column; gap:14px;">
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Reel Link</label><a id="rv-url" href="#" target="_blank" style="color:#3b82f6; font-size:14px; word-break:break-all;"></a></div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Quality Rating (1-5)</label><div style="display:flex; gap:8px;" id="rv-stars"></div></div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Payment Amount (INR)</label><input id="rv-amount" type="number" placeholder="Based on quality..." style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;"></div>
+                            <div><label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:4px;">Feedback</label><textarea id="rv-feedback" rows="2" placeholder="Great work! / Needs more product visibility..." style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; resize:none; box-sizing:border-box; outline:none;"></textarea></div>
+                            <div style="display:flex; gap:12px;">
+                                <button onclick="reviewSubmission('approved')" style="background:#10B981; color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; font-family:inherit; cursor:pointer; border:none;">Approve</button>
+                                <button onclick="reviewSubmission('revision_needed')" style="background:#F59E0B; color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; font-family:inherit; cursor:pointer; border:none;">Revision</button>
+                                <button onclick="reviewSubmission('rejected')" style="background:#EF4444; color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; font-family:inherit; cursor:pointer; border:none;">Reject</button>
+                            </div>
+                            <p id="rv-msg" style="margin:0; font-size:13px; font-weight:500; display:none;"></p>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ═══ PAYOUTS ═══ -->
+                <div id="view-payouts" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Payout History</h1>
+                    <p style="color:#666; margin-bottom:32px;">All payment transactions.</p>
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <div id="payouts-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                </div>
+
+                <!-- ═══ ANALYTICS ═══ -->
+                <div id="view-analytics" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Platform Analytics</h1>
+                    <p style="color:#666; margin-bottom:32px;">Deep metrics for managing 10,000+ creators and premium brands.</p>
+                    <div id="analytics-content"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const adminEmail = localStorage.getItem('user_email');
+        const ALL_VIEWS = ['overview','brands','campaigns','creators','enrolled','submissions','payouts','analytics'];
+        let allData = {};
+
+        function nav(view) {
+            ALL_VIEWS.forEach(v => {
+                document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
+            });
+            document.querySelectorAll('.vsb-item').forEach(i => {
+                i.classList.toggle('active', i.dataset.view === view);
+            });
+            const loaders = { brands: loadBrands, campaigns: loadCampaigns, creators: loadCreators, enrolled: loadEnrolled, submissions: loadSubmissions, payouts: loadPayouts, analytics: loadAnalytics };
+            if (loaders[view]) loaders[view]();
+        }
+
+        // backward compat
+        function switchView(view) { nav(view); }
+
+        function logout() { localStorage.clear(); location.href = 'index.html'; }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('ceo-sidebar');
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('collapsed') ? 'true' : 'false');
+        }
+
+        // Restore sidebar state on load
+        function restoreSidebarState() {
+            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (isCollapsed) {
+                document.getElementById('ceo-sidebar').classList.add('collapsed');
+            }
+        }
+
+        function loadSession() {
+            const pic  = localStorage.getItem('user_picture');
+            const name = localStorage.getItem('user_name') || 'Admin';
+            const av   = document.getElementById('csb-avatar');
+            const nm   = document.getElementById('csb-user-name');
+            if (nm) nm.innerText = name.split(' ')[0];
+            if (av) {
+                if (pic) { av.style.backgroundImage = `url(${pic})`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.innerText = ''; }
+                else av.innerText = name[0].toUpperCase();
+            }
+            // top-right avatar (kept for reference)
+            const topAv = document.getElementById('user-avatar');
+            if (topAv) {
+                if (pic) { topAv.style.backgroundImage = `url(${pic})`; topAv.innerText = ''; }
+                else topAv.innerText = name[0].toUpperCase();
+            }
+        }
+
+        // Helper
+        function badge(bg, color, label) { return `<span style="background:${bg}; color:${color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${label}</span>`; }
+        function table(headers, rows) {
+            return `<div class="admin-table-wrap"><table class="admin-table"><thead><tr>${headers.map(h => `<th${h.align ? ` style="text-align:${h.align}"` : ''}>${h.label}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+        }
+        const statusBadge = (s, map) => { const c = map[s] || map['default'] || { bg:'#F3F4F6', color:'#666', label: s }; return badge(c.bg, c.color, c.label); };
+
+        const brandStatus = { 'true': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'VERIFIED' }, 'false': { bg:'rgba(234,179,8,0.1)', color:'#CA8A04', label:'PENDING' } };
+        const campStatus = { 'pending_review': { bg:'rgba(234,179,8,0.1)', color:'#CA8A04', label:'PENDING' }, 'approved': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'APPROVED' }, 'active': { bg:'rgba(59,130,246,0.1)', color:'#3b82f6', label:'ACTIVE' }, 'paused': { bg:'#F3F4F6', color:'#6B7280', label:'PAUSED' }, 'completed': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'DONE' }, 'rejected': { bg:'rgba(239,68,68,0.1)', color:'#EF4444', label:'REJECTED' } };
+        const enrollStatus = { 'enrolled': { bg:'rgba(59,130,246,0.1)', color:'#3b82f6', label:'ENROLLED' }, 'submitted': { bg:'rgba(99,102,241,0.1)', color:'#6366F1', label:'SUBMITTED' }, 'under_review': { bg:'rgba(217,119,6,0.1)', color:'#D97706', label:'REVIEWING' }, 'approved': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'APPROVED' }, 'rejected': { bg:'rgba(239,68,68,0.1)', color:'#EF4444', label:'REJECTED' }, 'paid': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'PAID' } };
+        const subStatus = { 'pending_review': { bg:'rgba(234,179,8,0.1)', color:'#CA8A04', label:'PENDING' }, 'approved': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'APPROVED' }, 'revision_needed': { bg:'rgba(217,119,6,0.1)', color:'#D97706', label:'REVISION' }, 'rejected': { bg:'rgba(239,68,68,0.1)', color:'#EF4444', label:'REJECTED' }, 'paid': { bg:'rgba(16,185,129,0.1)', color:'#10B981', label:'PAID' } };
+
+        // ═══ OVERVIEW ═══
+        async function loadOverview() {
+            try {
+                const res = await fetch('/api/user/platform-stats');
+                const s = await res.json();
+                allData.stats = s;
+
+                const grid = document.getElementById('stats-grid');
+                grid.innerHTML = [
+                    ['Total Users', s.totalUsers], ['Creators', s.totalCreators], ['Brands', s.totalBrands], ['Active Campaigns', s.activeCampaigns],
+                    ['Enrollments', s.totalEnrollments], ['Submissions', s.totalSubmissions], ['Total Paid', '₹' + (s.totalPaidINR || 0).toLocaleString('en-IN')], ['Pending Review', '—']
+                ].map(([label, val]) => `<div class="a-stat-card"><div class="as-label">${label}</div><div class="as-val" style="font-size:36px;">${val}</div></div>`).join('');
+
+                document.getElementById('overview-sub').innerText = `${s.totalCreators} creators · ${s.totalBrands} brands · ${s.activeCampaigns} live campaigns`;
+            } catch (err) { document.getElementById('overview-sub').innerText = 'Could not connect to backend.'; }
+        }
+
+        // ═══ BRANDS ═══
+        async function loadBrands() {
+            const area = document.getElementById('brands-area'); area.innerHTML = '<p style="color:#999;">Loading...</p>';
+            try {
+                const res = await fetch(`/api/brand/all?admin_email=${encodeURIComponent(adminEmail)}`);
+                const body = await res.json(); const brands = body.data || [];
+                if (!brands.length) { area.innerHTML = '<p style="color:#999;">No brands yet.</p>'; return; }
+                area.innerHTML = table([{label:'Brand'},{label:'Industry'},{label:'Contact'},{label:'Status'},{label:'Actions',align:'right'}],
+                    brands.map(b => `<tr>
+                        <td><div style="font-weight:700;">${b.company_name||'-'}</div><div style="font-size:11px; color:#999;">${b.email}</div></td>
+                        <td>${b.industry||'-'}</td><td>${b.contact_person||'-'}</td>
+                        <td>${statusBadge(String(b.is_verified), brandStatus)}</td>
+                        <td style="text-align:right;"><button onclick="toggleBrand('${b.id}',${!b.is_verified},this)" style="background:${b.is_verified?'#fff':'#10B981'}; color:${b.is_verified?'#666':'#fff'}; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:${b.is_verified?'1px solid #ddd':'none'}; font-family:inherit;">${b.is_verified?'Unverify':'Verify'}</button></td>
+                    </tr>`).join(''));
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+        async function toggleBrand(id, verified, btn) { btn.disabled=true; btn.innerText='...';
+            await fetch('/api/brand/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({admin_email:adminEmail, brand_id:id, verified}) });
+            loadBrands(); loadOverview();
+        }
+
+        // ═══ CAMPAIGNS ═══
+        async function loadCampaigns() {
+            const area = document.getElementById('campaigns-area'); area.innerHTML = '<p style="color:#999;">Loading...</p>';
+            try {
+                const res = await fetch(`/api/brand/all-campaigns?admin_email=${encodeURIComponent(adminEmail)}`);
+                const body = await res.json(); allData.campaigns = body.data || [];
+                if (!allData.campaigns.length) { area.innerHTML = '<p style="color:#999;">No campaigns yet.</p>'; return; }
+                area.innerHTML = table([{label:'Campaign'},{label:'Brand'},{label:'Pay/Reel'},{label:'Budget'},{label:'Slots'},{label:'Status'},{label:'Actions',align:'right'}],
+                    allData.campaigns.map(c => `<tr>
+                        <td><div style="font-weight:700;">${c.title}</div><div style="font-size:11px; color:#999;">${c.category||''} · ${c.deadline||'open'}</div></td>
+                        <td>${c.brands?.company_name||c.brand_email}</td>
+                        <td style="font-weight:700;">₹${c.pay_per_reel}</td><td>₹${(c.total_budget||0).toLocaleString('en-IN')}</td><td>${c.claimed_slots}/${c.total_slots}</td>
+                        <td>${statusBadge(c.status, campStatus)}</td>
+                        <td style="text-align:right;">
+                            <button onclick="editCampaign('${c.id}')" style="background:#111; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit;">Edit</button>
+                            ${c.status==='pending_review'?`<button onclick="quickAction('${c.id}','approved')" style="background:#10B981; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit; margin-left:4px;">Approve</button>`:''}
+                        </td>
+                    </tr>`).join(''));
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+        function editCampaign(id) {
+            const c = allData.campaigns.find(x => x.id === id); if (!c) return;
+            document.getElementById('ce-id').value = c.id;
+            document.getElementById('ce-title').value = c.title||'';
+            document.getElementById('ce-pay').value = c.pay_per_reel||'';
+            document.getElementById('ce-slots').value = c.total_slots||'';
+            document.getElementById('ce-deadline').value = c.deadline||'';
+            document.getElementById('ce-notes').value = c.ceo_notes||'';
+            document.getElementById('ce-status').value = c.status;
+            document.getElementById('campaign-editor').style.display = 'block';
+            document.getElementById('ce-msg').style.display = 'none';
+            document.getElementById('campaign-editor').scrollIntoView({behavior:'smooth',block:'center'});
+        }
+        async function saveCampaignEdit() {
+            const btn = document.getElementById('btn-ce'); btn.disabled=true; btn.innerText='Saving...';
+            try {
+                const res = await fetch('/api/brand/campaign/review', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+                    admin_email:adminEmail, campaign_id:document.getElementById('ce-id').value,
+                    title:document.getElementById('ce-title').value, pay_per_reel:document.getElementById('ce-pay').value,
+                    total_slots:document.getElementById('ce-slots').value, deadline:document.getElementById('ce-deadline').value,
+                    ceo_notes:document.getElementById('ce-notes').value, status:document.getElementById('ce-status').value
+                })});
+                if (!res.ok) throw new Error((await res.json()).error);
+                document.getElementById('ce-msg').style.display='block'; document.getElementById('ce-msg').style.color='#16A34A'; document.getElementById('ce-msg').innerText='Saved!';
+                loadCampaigns(); loadOverview();
+            } catch(e) { document.getElementById('ce-msg').style.display='block'; document.getElementById('ce-msg').style.color='#EF4444'; document.getElementById('ce-msg').innerText=e.message; }
+            finally { btn.disabled=false; btn.innerText='Save'; }
+        }
+        async function quickAction(id, status) {
+            await fetch('/api/brand/campaign/review', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({admin_email:adminEmail, campaign_id:id, status}) });
+            loadCampaigns(); loadOverview();
+        }
+
+        // ═══ ALL CREATORS ═══
+        async function loadCreators() {
+            const area = document.getElementById('creators-area'); area.innerHTML = '<p style="color:#999;">Loading...</p>';
+            try {
+                const res = await fetch(`/api/user/all-creators?admin_email=${encodeURIComponent(adminEmail)}`);
+                const body = await res.json(); const creators = body.data || [];
+                if (!creators.length) { area.innerHTML = '<p style="color:#999;">No creators yet.</p>'; return; }
+
+                area.innerHTML = table([{label:'Creator'},{label:'Instagram'},{label:'Niche'},{label:'City'},{label:'Profile'},{label:'Joined'}],
+                    creators.map(u => {
+                        const p = u.creator_profiles && u.creator_profiles.length > 0 ? u.creator_profiles[0] : (Array.isArray(u.creator_profiles) ? null : u.creator_profiles);
+                        const profileBadge = u.profile_complete
+                            ? badge('rgba(16,185,129,0.1)','#10B981','COMPLETE')
+                            : badge('rgba(234,179,8,0.1)','#CA8A04','INCOMPLETE');
+                        const date = new Date(u.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+                        return `<tr>
+                            <td><div style="font-weight:700;">${u.name||'-'}</div><div style="font-size:11px; color:#999;">${u.email}</div></td>
+                            <td style="color:#E1306C; font-weight:600;">${p?.instagram||'-'}</td>
+                            <td>${p?.niche||'-'}</td><td>${p?.city||'-'}</td>
+                            <td>${profileBadge}</td><td style="font-size:12px; color:#666;">${date}</td>
+                        </tr>`;
+                    }).join(''));
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+
+        // ═══ ENROLLED ═══
+        async function loadEnrolled() {
+            const area = document.getElementById('enrolled-area'); area.innerHTML = '<p style="color:#999;">Loading...</p>';
+            try {
+                const res = await fetch(`/api/user/all-enrollments?admin_email=${encodeURIComponent(adminEmail)}`);
+                const body = await res.json(); const enrollments = body.data || [];
+                if (!enrollments.length) { area.innerHTML = '<p style="color:#999;">No enrollments yet.</p>'; return; }
+
+                area.innerHTML = table([{label:'Creator'},{label:'Instagram'},{label:'Campaign'},{label:'Delivery Date'},{label:'Rate'},{label:'Status'}],
+                    enrollments.map(e => {
+                        const campaign = e.brand_campaigns || {};
+                        const brand = campaign.brands || {};
+                        const date = e.delivery_date ? new Date(e.delivery_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '-';
+                        return `<tr>
+                            <td><div style="font-weight:700;">${e.creator_name||'-'}</div><div style="font-size:11px; color:#999;">${e.creator_email}</div></td>
+                            <td style="color:#E1306C; font-weight:600;">${e.instagram_handle}</td>
+                            <td><div style="font-weight:600;">${campaign.title||'-'}</div><div style="font-size:11px; color:#999;">${brand.company_name||''}</div></td>
+                            <td style="font-weight:600;">${date}</td>
+                            <td style="font-weight:700;">₹${e.agreed_rate||campaign.pay_per_reel||0}</td>
+                            <td>${statusBadge(e.status, enrollStatus)}</td>
+                        </tr>`;
+                    }).join(''));
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+
+        // ═══ SUBMISSIONS ═══
+        async function loadSubmissions() {
+            const area = document.getElementById('submissions-area'); area.innerHTML = '<p style="color:#999;">Loading...</p>';
+            try {
+                const res = await fetch(`/api/user/all-submissions?admin_email=${encodeURIComponent(adminEmail)}`);
+                const body = await res.json(); allData.submissions = body.data || [];
+                if (!allData.submissions.length) { area.innerHTML = '<p style="color:#999;">No submissions yet.</p>'; return; }
+
+                area.innerHTML = table([{label:'Creator'},{label:'Campaign'},{label:'Reel'},{label:'Rating'},{label:'Payment'},{label:'Status'},{label:'Actions',align:'right'}],
+                    allData.submissions.map(s => {
+                        const campaign = s.brand_campaigns || {};
+                        const enrollment = s.campaign_enrollments || {};
+                        const date = new Date(s.submitted_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+                        return `<tr>
+                            <td><div style="font-weight:700;">${enrollment.creator_name||s.creator_email}</div><div style="font-size:11px; color:#E1306C;">${enrollment.instagram_handle||''}</div></td>
+                            <td>${campaign.title||'-'}</td>
+                            <td><a href="${s.reel_url}" target="_blank" style="color:#3b82f6; font-size:12px;">View Reel</a><div style="font-size:11px; color:#999;">${date}</div></td>
+                            <td style="font-weight:700;">${s.ceo_rating ? s.ceo_rating+'/5' : '-'}</td>
+                            <td style="font-weight:700;">${s.decided_amount ? '₹'+s.decided_amount : '-'}</td>
+                            <td>${statusBadge(s.status, subStatus)}</td>
+                            <td style="text-align:right;"><button onclick="openReview('${s.id}')" style="background:#111; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit;">Review</button></td>
+                        </tr>`;
+                    }).join(''));
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+
+        let selectedRating = 0;
+        function openReview(id) {
+            const s = allData.submissions.find(x => x.id === id); if (!s) return;
+            document.getElementById('rv-id').value = s.id;
+            const link = document.getElementById('rv-url'); link.href = s.reel_url; link.innerText = s.reel_url;
+            document.getElementById('rv-amount').value = s.decided_amount || (s.brand_campaigns?.pay_per_reel || '');
+            document.getElementById('rv-feedback').value = s.ceo_feedback || '';
+            selectedRating = s.ceo_rating || 0;
+            renderStars();
+            document.getElementById('review-panel').style.display = 'block';
+            document.getElementById('rv-msg').style.display = 'none';
+            document.getElementById('review-panel').scrollIntoView({behavior:'smooth',block:'center'});
+        }
+        function renderStars() {
+            const div = document.getElementById('rv-stars'); div.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('button');
+                star.innerHTML = i <= selectedRating ? '&#9733;' : '&#9734;';
+                star.style.cssText = `font-size:28px; cursor:pointer; color:${i<=selectedRating?'#F59E0B':'#ddd'}; background:none; border:none; padding:0;`;
+                star.onclick = () => { selectedRating = i; renderStars(); };
+                div.appendChild(star);
+            }
+        }
+        async function reviewSubmission(status) {
+            const msgEl = document.getElementById('rv-msg');
+            try {
+                const res = await fetch('/api/user/review-submission', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+                    admin_email:adminEmail, submission_id:document.getElementById('rv-id').value,
+                    status, ceo_rating:selectedRating, ceo_feedback:document.getElementById('rv-feedback').value,
+                    decided_amount:document.getElementById('rv-amount').value
+                })});
+                if (!res.ok) throw new Error((await res.json()).error);
+                msgEl.style.display='block'; msgEl.style.color='#16A34A'; msgEl.innerText='Review saved!';
+                loadSubmissions(); loadOverview();
+            } catch(e) { msgEl.style.display='block'; msgEl.style.color='#EF4444'; msgEl.innerText=e.message; }
+        }
+
+        // ═══ PAYOUTS ═══
+        async function loadPayouts() {
+            const area = document.getElementById('payouts-area'); area.innerHTML = '<p style="color:#999;">Loading...</p>';
+            try {
+                const res = await fetch(`/api/creator/payouts?admin_email=${encodeURIComponent(adminEmail)}`);
+                const body = await res.json(); const payouts = body.data || [];
+                if (!payouts.length) { area.innerHTML = '<p style="color:#999;">No payouts yet.</p>'; return; }
+                const payStatus = { 'processed':{bg:'rgba(16,185,129,0.1)',color:'#10B981',label:'DONE'}, 'processing':{bg:'rgba(59,130,246,0.1)',color:'#3b82f6',label:'PROCESSING'}, 'pending':{bg:'rgba(234,179,8,0.1)',color:'#CA8A04',label:'PENDING'}, 'failed':{bg:'rgba(239,68,68,0.1)',color:'#EF4444',label:'FAILED'} };
+                area.innerHTML = table([{label:'Creator'},{label:'Campaign'},{label:'Amount'},{label:'Type'},{label:'Status'},{label:'Date'}],
+                    payouts.map(p => `<tr>
+                        <td><div style="font-weight:600;">${p.creator_name||'-'}</div><div style="font-size:11px; color:#999;">${p.creator_email}</div></td>
+                        <td>${p.campaign_name||'-'}</td><td style="font-weight:700;">₹${(p.amount/100).toLocaleString('en-IN')}</td>
+                        <td>${p.payment_type||'-'}</td><td>${statusBadge(p.status, payStatus)}</td>
+                        <td style="font-size:12px; color:#666;">${new Date(p.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
+                    </tr>`).join(''));
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+
+        // ═══ QUICK PAYOUT ═══
+        async function quickPayout() {
+            const email=document.getElementById('qp-email').value.trim(), amt=parseFloat(document.getElementById('qp-amount').value), camp=document.getElementById('qp-campaign').value.trim(), msg=document.getElementById('qp-msg');
+            if (!email||!amt||amt<1) { msg.style.display='block'; msg.style.color='#EF4444'; msg.innerText='Valid email and amount required.'; return; }
+            const btn=document.getElementById('btn-qp'); btn.disabled=true; btn.innerText='...';
+            try {
+                const res=await fetch('/api/creator/payout/initiate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_email:adminEmail,creator_email:email,creator_name:email,amount:Math.round(amt*100),campaign_name:camp||'General'})});
+                const data=await res.json(); if(!res.ok) throw new Error(data.error);
+                msg.style.display='block'; msg.style.color='#16A34A'; msg.innerText=data.message+(data.test_mode?' (Test)':''); loadOverview();
+            } catch(e) { msg.style.display='block'; msg.style.color='#EF4444'; msg.innerText=e.message; }
+            finally { btn.disabled=false; btn.innerText='Send'; }
+        }
+
+        // ═══ ANALYTICS ═══
+        async function loadAnalytics() {
+            const area = document.getElementById('analytics-content');
+            try {
+                const [creatorsRes, enrolledRes, subsRes, brandsRes, campaignsRes, payoutsRes] = await Promise.all([
+                    fetch(`/api/user/all-creators?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/user/all-enrollments?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/user/all-submissions?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/brand/all?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/brand/all-campaigns?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/creator/payouts?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json())
+                ]);
+
+                const creators = creatorsRes.data||[], enrolled = enrolledRes.data||[], subs = subsRes.data||[];
+                const brands = brandsRes.data||[], campaigns = campaignsRes.data||[], payouts = payoutsRes.data||[];
+
+                const profileComplete = creators.filter(c=>c.profile_complete).length;
+                const profileRate = creators.length ? Math.round((profileComplete/creators.length)*100) : 0;
+                const enrollmentRate = creators.length ? Math.round((new Set(enrolled.map(e=>e.creator_email)).size / creators.length)*100) : 0;
+                const submissionRate = enrolled.length ? Math.round((subs.length/enrolled.length)*100) : 0;
+                const approvedSubs = subs.filter(s=>['approved','paid'].includes(s.status)).length;
+                const approvalRate = subs.length ? Math.round((approvedSubs/subs.length)*100) : 0;
+                const avgRating = subs.filter(s=>s.ceo_rating).reduce((sum,s)=>sum+s.ceo_rating,0) / (subs.filter(s=>s.ceo_rating).length||1);
+                const totalRevenue = payouts.reduce((s,p)=>s+(p.amount||0),0) / 100;
+                const verifiedBrands = brands.filter(b=>b.is_verified).length;
+                const activeCampaigns = campaigns.filter(c=>['approved','active'].includes(c.status)).length;
+                const totalBudget = campaigns.reduce((s,c)=>s+(c.total_budget||0),0);
+
+                // Top categories
+                const catCounts = {};
+                enrolled.forEach(e => { const cat = e.brand_campaigns?.category||'other'; catCounts[cat] = (catCounts[cat]||0)+1; });
+                const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+                // Top creators by submissions
+                const creatorSubCounts = {};
+                subs.forEach(s => { creatorSubCounts[s.creator_email] = (creatorSubCounts[s.creator_email]||0)+1; });
+                const topCreators = Object.entries(creatorSubCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+                area.innerHTML = `
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;">
+                        ${[
+                            ['Profile Completion', profileRate+'%', 'of creators completed profiles'],
+                            ['Enrollment Rate', enrollmentRate+'%', 'of creators enrolled in 1+ campaign'],
+                            ['Submission Rate', submissionRate+'%', 'of enrollments submitted work'],
+                            ['Approval Rate', approvalRate+'%', 'of submissions approved']
+                        ].map(([t,v,d])=>`<div style="padding:24px; border:1px solid #eee; border-radius:20px;"><div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">${t}</div><div style="font-size:36px; font-weight:800; margin-bottom:4px;">${v}</div><div style="font-size:12px; color:#999;">${d}</div></div>`).join('')}
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px;">
+                        ${[
+                            ['Avg Quality Rating', avgRating.toFixed(1)+'/5'],
+                            ['Total Revenue Tracked', '₹'+totalRevenue.toLocaleString('en-IN')],
+                            ['Total Campaign Budget', '₹'+totalBudget.toLocaleString('en-IN')]
+                        ].map(([t,v])=>`<div style="padding:24px; border:1px solid #eee; border-radius:20px;"><div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">${t}</div><div style="font-size:32px; font-weight:800;">${v}</div></div>`).join('')}
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                        <div style="border:1px solid #eee; border-radius:20px; padding:24px;">
+                            <h3 style="font-size:16px; margin-bottom:16px;">Top Categories</h3>
+                            ${topCats.length ? topCats.map(([cat,count])=>`<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f5f5f5;"><span style="font-weight:600; text-transform:capitalize;">${cat}</span><span style="font-weight:700;">${count} enrollments</span></div>`).join('') : '<p style="color:#999;">No data yet</p>'}
+                        </div>
+                        <div style="border:1px solid #eee; border-radius:20px; padding:24px;">
+                            <h3 style="font-size:16px; margin-bottom:16px;">Top Creators (by submissions)</h3>
+                            ${topCreators.length ? topCreators.map(([email,count])=>`<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f5f5f5;"><span style="font-size:13px;">${email}</span><span style="font-weight:700;">${count}</span></div>`).join('') : '<p style="color:#999;">No data yet</p>'}
+                        </div>
+                    </div>
+                    <div style="margin-top:24px; border:1px solid #eee; border-radius:20px; padding:24px;">
+                        <h3 style="font-size:16px; margin-bottom:16px;">Platform Health</h3>
+                        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+                            <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Verified Brands</div><div style="font-size:24px; font-weight:800;">${verifiedBrands}/${brands.length}</div></div>
+                            <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Active Campaigns</div><div style="font-size:24px; font-weight:800;">${activeCampaigns}/${campaigns.length}</div></div>
+                            <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Creators w/ Payment</div><div style="font-size:24px; font-weight:800;">—</div></div>
+                            <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Pending Submissions</div><div style="font-size:24px; font-weight:800;">${subs.filter(s=>s.status==='pending_review').length}</div></div>
+                        </div>
+                    </div>`;
+            } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', () => { restoreSidebarState(); loadSession(); loadOverview(); });
+    </script>
+</body>
+</html>
