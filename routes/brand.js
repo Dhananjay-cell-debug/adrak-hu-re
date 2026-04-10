@@ -1,4 +1,6 @@
 const express = require('express');
+const crypto  = require('crypto');
+const axios   = require('axios');
 const multer  = require('multer');
 const path    = require('path');
 const os      = require('os');
@@ -386,6 +388,190 @@ router.get('/all-enrollments', async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
     res.json({ data });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RAZORPAY PAYMENT COLLECTION (Brand pays campaign budget)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function razorpayAuth() {
+    const creds = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+    return { Authorization: `Basic ${creds}`, 'Content-Type': 'application/json' };
+}
+
+// ── POST /api/brand/campaign/create-order ────────────────────────────────────
+// Creates a Razorpay Order so the brand can pay the campaign budget
+router.post('/campaign/create-order', async (req, res) => {
+    const { email, campaign_id } = req.body;
+    if (!email || !campaign_id) return res.status(400).json({ error: 'email and campaign_id required' });
+
+    try {
+        // Get campaign details
+        const { data: campaigns } = await supabase
+            .from('brand_campaigns')
+            .select('*, brands(company_name)')
+            .eq('id', campaign_id)
+            .eq('brand_email', email)
+            .limit(1);
+
+        if (!campaigns || campaigns.length === 0) return res.status(404).json({ error: 'Campaign not found' });
+        const campaign = campaigns[0];
+
+        if (campaign.payment_status === 'paid') {
+            return res.status(400).json({ error: 'Campaign already paid' });
+        }
+
+        const amount = campaign.total_budget * 100; // convert INR to paise
+        if (amount < 100) return res.status(400).json({ error: 'Minimum payment is ₹1' });
+
+        // Create Razorpay Order
+        const orderRes = await axios.post(
+            'https://api.razorpay.com/v1/orders',
+            {
+                amount,
+                currency: 'INR',
+                receipt: `camp_${campaign_id.substring(0, 8)}_${Date.now()}`,
+                notes: {
+                    campaign_id,
+                    campaign_title: campaign.title,
+                    brand_email: email,
+                    platform: 'Velt Industries'
+                }
+            },
+            { headers: razorpayAuth() }
+        );
+
+        const order = orderRes.data;
+
+        // Save order ID to campaign
+        await supabase
+            .from('brand_campaigns')
+            .update({ razorpay_order_id: order.id, payment_status: 'order_created' })
+            .eq('id', campaign_id);
+
+        // Log transaction
+        await supabase.from('platform_transactions').insert({
+            type: 'brand_payment',
+            reference_id: campaign_id,
+            from_email: email,
+            amount,
+            razorpay_order_id: order.id,
+            status: 'pending',
+            notes: `Campaign: ${campaign.title}`
+        });
+
+        res.json({
+            success: true,
+            order_id: order.id,
+            amount,
+            currency: 'INR',
+            key: process.env.RAZORPAY_KEY_ID, // public key for frontend checkout
+            campaign_title: campaign.title,
+            brand_name: campaign.brands?.company_name || email
+        });
+
+    } catch (err) {
+        console.error('create-order error:', err.response?.data || err.message);
+        res.status(500).json({ error: err.response?.data?.error?.description || err.message });
+    }
+});
+
+// ── POST /api/brand/campaign/verify-payment ──────────────────────────────────
+// Verifies Razorpay payment signature after checkout success
+router.post('/campaign/verify-payment', async (req, res) => {
+    const { email, campaign_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return res.status(400).json({ error: 'Missing payment verification fields' });
+    }
+
+    try {
+        // Verify signature — HMAC SHA256(order_id|payment_id, secret)
+        const expectedSignature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+            .digest('hex');
+
+        if (expectedSignature !== razorpay_signature) {
+            return res.status(400).json({ error: 'Payment verification failed — invalid signature' });
+        }
+
+        // Signature valid — update campaign as paid
+        const { data: updated, error } = await supabase
+            .from('brand_campaigns')
+            .update({
+                payment_status: 'paid',
+                razorpay_payment_id,
+                paid_at: new Date().toISOString()
+            })
+            .eq('razorpay_order_id', razorpay_order_id)
+            .select();
+
+        if (error) throw error;
+
+        // Update transaction record
+        await supabase
+            .from('platform_transactions')
+            .update({
+                razorpay_payment_id,
+                status: 'captured',
+                updated_at: new Date().toISOString()
+            })
+            .eq('razorpay_order_id', razorpay_order_id);
+
+        const campaign = updated && updated[0];
+
+        res.json({
+            success: true,
+            message: `Payment of ₹${campaign ? (campaign.total_budget).toLocaleString('en-IN') : '?'} received! Campaign submitted for CEO review.`,
+            campaign
+        });
+
+    } catch (err) {
+        console.error('verify-payment error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── GET /api/brand/campaign/payment-status ───────────────────────────────────
+// Check payment status of a campaign
+router.get('/campaign/payment-status', async (req, res) => {
+    const { campaign_id, email } = req.query;
+    if (!campaign_id) return res.status(400).json({ error: 'campaign_id required' });
+
+    const { data, error } = await supabase
+        .from('brand_campaigns')
+        .select('id, payment_status, razorpay_order_id, paid_at, total_budget')
+        .eq('id', campaign_id)
+        .limit(1);
+
+    if (error) return res.status(500).json({ error: error.message });
+    if (!data || data.length === 0) return res.status(404).json({ error: 'Campaign not found' });
+
+    res.json({ data: data[0] });
+});
+
+// ── GET /api/brand/platform-revenue ──────────────────────────────────────────
+// CEO: total revenue collected from brands
+router.get('/platform-revenue', async (req, res) => {
+    const { admin_email } = req.query;
+    if (admin_email !== ADMIN_EMAIL) return res.status(403).json({ error: 'Unauthorized' });
+
+    const { data, error } = await supabase
+        .from('platform_transactions')
+        .select('*')
+        .eq('type', 'brand_payment')
+        .eq('status', 'captured')
+        .order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const totalPaise = (data || []).reduce((s, t) => s + (t.amount || 0), 0);
+    res.json({
+        transactions: data || [],
+        total_collected_paise: totalPaise,
+        total_collected_inr: totalPaise / 100
+    });
 });
 
 module.exports = router;

@@ -324,17 +324,22 @@
                 const res = await fetch(`/api/brand/all-campaigns?admin_email=${encodeURIComponent(adminEmail)}`);
                 const body = await res.json(); allData.campaigns = body.data || [];
                 if (!allData.campaigns.length) { area.innerHTML = '<p style="color:#999;">No campaigns yet.</p>'; return; }
-                area.innerHTML = table([{label:'Campaign'},{label:'Brand'},{label:'Pay/Reel'},{label:'Budget'},{label:'Slots'},{label:'Status'},{label:'Actions',align:'right'}],
-                    allData.campaigns.map(c => `<tr>
+                const payBadge = {'paid':{bg:'rgba(16,185,129,0.1)',color:'#10B981',label:'PAID'},'unpaid':{bg:'rgba(239,68,68,0.1)',color:'#EF4444',label:'UNPAID'},'order_created':{bg:'rgba(234,179,8,0.1)',color:'#CA8A04',label:'PENDING'}};
+                area.innerHTML = table([{label:'Campaign'},{label:'Brand'},{label:'Pay/Reel'},{label:'Budget'},{label:'Slots'},{label:'Payment'},{label:'Status'},{label:'Actions',align:'right'}],
+                    allData.campaigns.map(c => {
+                        const pb = payBadge[c.payment_status] || payBadge['unpaid'];
+                        return `<tr>
                         <td><div style="font-weight:700;">${c.title}</div><div style="font-size:11px; color:#999;">${c.category||''} · ${c.deadline||'open'}</div></td>
                         <td>${c.brands?.company_name||c.brand_email}</td>
                         <td style="font-weight:700;">₹${c.pay_per_reel}</td><td>₹${(c.total_budget||0).toLocaleString('en-IN')}</td><td>${c.claimed_slots}/${c.total_slots}</td>
+                        <td><span style="background:${pb.bg}; color:${pb.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${pb.label}</span></td>
                         <td>${statusBadge(c.status, campStatus)}</td>
                         <td style="text-align:right;">
                             <button onclick="editCampaign('${c.id}')" style="background:#111; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit;">Edit</button>
-                            ${c.status==='pending_review'?`<button onclick="quickAction('${c.id}','approved')" style="background:#10B981; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit; margin-left:4px;">Approve</button>`:''}
+                            ${c.status==='pending_review' && c.payment_status==='paid'?`<button onclick="quickAction('${c.id}','approved')" style="background:#10B981; color:#fff; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:inherit; margin-left:4px;">Approve</button>`:''}
+                            ${c.status==='pending_review' && c.payment_status!=='paid'?`<span style="font-size:11px; color:#CA8A04; font-weight:600;">Awaiting Payment</span>`:''}
                         </td>
-                    </tr>`).join(''));
+                    </tr>`}).join(''));
             } catch (err) { area.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
         }
         function editCampaign(id) {
@@ -518,17 +523,20 @@
         async function loadAnalytics() {
             const area = document.getElementById('analytics-content');
             try {
-                const [creatorsRes, enrolledRes, subsRes, brandsRes, campaignsRes, payoutsRes] = await Promise.all([
+                const [creatorsRes, enrolledRes, subsRes, brandsRes, campaignsRes, payoutsRes, revenueRes] = await Promise.all([
                     fetch(`/api/user/all-creators?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
                     fetch(`/api/user/all-enrollments?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
                     fetch(`/api/user/all-submissions?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
                     fetch(`/api/brand/all?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
                     fetch(`/api/brand/all-campaigns?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
-                    fetch(`/api/creator/payouts?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json())
+                    fetch(`/api/creator/payouts?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/brand/platform-revenue?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()).catch(()=>({total_collected_inr:0}))
                 ]);
 
                 const creators = creatorsRes.data||[], enrolled = enrolledRes.data||[], subs = subsRes.data||[];
                 const brands = brandsRes.data||[], campaigns = campaignsRes.data||[], payouts = payoutsRes.data||[];
+                const brandRevenue = revenueRes.total_collected_inr || 0;
+                const paidCampaigns = campaigns.filter(c=>c.payment_status==='paid').length;
 
                 const profileComplete = creators.filter(c=>c.profile_complete).length;
                 const profileRate = creators.length ? Math.round((profileComplete/creators.length)*100) : 0;
@@ -561,10 +569,11 @@
                             ['Approval Rate', approvalRate+'%', 'of submissions approved']
                         ].map(([t,v,d])=>`<div style="padding:24px; border:1px solid #eee; border-radius:20px;"><div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">${t}</div><div style="font-size:36px; font-weight:800; margin-bottom:4px;">${v}</div><div style="font-size:12px; color:#999;">${d}</div></div>`).join('')}
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px;">
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;">
                         ${[
                             ['Avg Quality Rating', avgRating.toFixed(1)+'/5'],
-                            ['Total Revenue Tracked', '₹'+totalRevenue.toLocaleString('en-IN')],
+                            ['Brand Revenue Collected', '₹'+brandRevenue.toLocaleString('en-IN')],
+                            ['Creator Payouts', '₹'+totalRevenue.toLocaleString('en-IN')],
                             ['Total Campaign Budget', '₹'+totalBudget.toLocaleString('en-IN')]
                         ].map(([t,v])=>`<div style="padding:24px; border:1px solid #eee; border-radius:20px;"><div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">${t}</div><div style="font-size:32px; font-weight:800;">${v}</div></div>`).join('')}
                     </div>
@@ -583,7 +592,7 @@
                         <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
                             <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Verified Brands</div><div style="font-size:24px; font-weight:800;">${verifiedBrands}/${brands.length}</div></div>
                             <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Active Campaigns</div><div style="font-size:24px; font-weight:800;">${activeCampaigns}/${campaigns.length}</div></div>
-                            <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Creators w/ Payment</div><div style="font-size:24px; font-weight:800;">—</div></div>
+                            <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Paid Campaigns</div><div style="font-size:24px; font-weight:800;">${paidCampaigns}/${campaigns.length}</div></div>
                             <div><div style="font-size:11px; color:#999; text-transform:uppercase; font-weight:700;">Pending Submissions</div><div style="font-size:24px; font-weight:800;">${subs.filter(s=>s.status==='pending_review').length}</div></div>
                         </div>
                     </div>`;

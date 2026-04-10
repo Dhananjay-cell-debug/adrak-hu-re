@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=9">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -410,7 +411,7 @@
 
                 msgEl.style.display = 'block';
                 msgEl.style.color = '#16A34A';
-                msgEl.innerText = 'Campaign submitted! CEO will review and approve it.';
+                msgEl.innerText = 'Campaign created! Opening payment...';
 
                 // Clear form
                 document.getElementById('nc-title').value = '';
@@ -422,6 +423,11 @@
                 document.getElementById('nc-refs').value = '';
                 document.getElementById('nc-budget-preview').innerText = '₹0';
 
+                // Auto-trigger payment for this campaign
+                if (data.data && data.data.id) {
+                    setTimeout(() => payForCampaign(data.data.id, data.data.title, data.data.total_budget), 500);
+                }
+
             } catch (err) {
                 msgEl.style.display = 'block';
                 msgEl.style.color = '#EF4444';
@@ -429,6 +435,90 @@
             } finally {
                 btn.disabled = false;
                 btn.innerText = 'Submit for Review';
+            }
+        }
+
+        // ── Razorpay Payment ────────────────────────────────────────────
+        async function payForCampaign(campaignId, title, budgetINR) {
+            try {
+                // Step 1: Create Razorpay Order
+                const orderRes = await fetch('/api/brand/campaign/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: brandEmail, campaign_id: campaignId })
+                });
+                const orderData = await orderRes.json();
+                if (!orderRes.ok) throw new Error(orderData.error);
+
+                // Step 2: Open Razorpay Checkout
+                const options = {
+                    key: orderData.key,
+                    amount: orderData.amount,
+                    currency: orderData.currency,
+                    name: 'Velt Industries',
+                    description: `Campaign: ${title || 'Campaign Payment'}`,
+                    order_id: orderData.order_id,
+                    prefill: {
+                        email: brandEmail,
+                        contact: ''
+                    },
+                    theme: { color: '#FF6B35' },
+                    handler: async function(response) {
+                        // Step 3: Verify payment
+                        try {
+                            const verifyRes = await fetch('/api/brand/campaign/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    email: brandEmail,
+                                    campaign_id: campaignId,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.success) {
+                                showPaymentSuccess(budgetINR || (orderData.amount / 100));
+                                loadDashboardStats();
+                                loadBrandCampaigns();
+                            } else {
+                                alert('Payment verification failed. Contact support.');
+                            }
+                        } catch (err) {
+                            alert('Verification error: ' + err.message);
+                        }
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            const msgEl = document.getElementById('nc-msg');
+                            if (msgEl) {
+                                msgEl.style.display = 'block';
+                                msgEl.style.color = '#CA8A04';
+                                msgEl.innerText = 'Payment cancelled. You can pay later from the Campaigns tab.';
+                            }
+                            loadBrandCampaigns();
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function(response) {
+                    alert('Payment failed: ' + (response.error?.description || 'Unknown error'));
+                });
+                rzp.open();
+
+            } catch (err) {
+                alert('Payment error: ' + err.message);
+            }
+        }
+
+        function showPaymentSuccess(amountINR) {
+            const msgEl = document.getElementById('nc-msg');
+            if (msgEl) {
+                msgEl.style.display = 'block';
+                msgEl.style.color = '#16A34A';
+                msgEl.innerHTML = `<strong>Payment of ₹${Number(amountINR).toLocaleString('en-IN')} successful!</strong> Your campaign is now submitted for CEO review.`;
             }
         }
 
@@ -462,28 +552,37 @@
                 'rejected':       { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'REJECTED' }
             };
 
+            const paymentConfig = {
+                'unpaid':        { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'UNPAID' },
+                'order_created': { bg: 'rgba(234,179,8,0.1)', color: '#CA8A04', label: 'PAYMENT PENDING' },
+                'paid':          { bg: 'rgba(16,185,129,0.1)', color: '#10B981', label: 'PAID' }
+            };
+
             let html = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr>
-                <th>Campaign</th><th>Pay/Reel</th><th>Slots</th><th>Enrolled</th><th>Status</th><th>Date</th>
+                <th>Campaign</th><th>Pay/Reel</th><th>Budget</th><th>Slots</th><th>Payment</th><th>Status</th><th>Actions</th>
             </tr></thead><tbody>`;
 
             campaigns.forEach(c => {
                 const sc = statusConfig[c.status] || statusConfig['pending_review'];
+                const pc = paymentConfig[c.payment_status] || paymentConfig['unpaid'];
                 const date = new Date(c.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+                const isPaid = c.payment_status === 'paid';
 
                 html += `<tr>
                     <td>
                         <div style="font-weight:700;">${c.title}</div>
-                        <div style="font-size:11px; color:#999;">${c.category || 'general'}</div>
+                        <div style="font-size:11px; color:#999;">${c.category || 'general'} · ${date}</div>
                     </td>
                     <td style="font-weight:700;">₹${c.pay_per_reel}</td>
-                    <td>${c.total_slots}</td>
-                    <td>${c.claimed_slots}</td>
+                    <td style="font-weight:700;">₹${(c.total_budget || 0).toLocaleString('en-IN')}</td>
+                    <td>${c.claimed_slots}/${c.total_slots}</td>
+                    <td><span style="background:${pc.bg}; color:${pc.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${pc.label}</span></td>
                     <td><span style="background:${sc.bg}; color:${sc.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${sc.label}</span></td>
-                    <td style="font-size:12px; color:#666;">${date}</td>
+                    <td>${!isPaid ? `<button onclick="payForCampaign('${c.id}', '${c.title.replace(/'/g,"\\'")}', ${c.total_budget})" style="background:#FF6B35; color:#fff; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; border:none; cursor:pointer; font-family:inherit;">Pay ₹${(c.total_budget || 0).toLocaleString('en-IN')}</button>` : `<span style="font-size:12px; color:#10B981; font-weight:600;">Paid</span>`}</td>
                 </tr>`;
 
                 if (c.ceo_notes) {
-                    html += `<tr><td colspan="6" style="padding:8px 16px 16px; border-bottom:1px solid #eee;">
+                    html += `<tr><td colspan="7" style="padding:8px 16px 16px; border-bottom:1px solid #eee;">
                         <div style="background:#FEF9C3; padding:10px 14px; border-radius:8px; font-size:12px;">
                             <strong style="color:#92400E;">CEO Notes:</strong> <span style="color:#78350F;">${c.ceo_notes}</span>
                         </div>
