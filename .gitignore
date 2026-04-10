@@ -39,3 +39,5 @@ Creator_Tracker*.csv
 Creator_Tracker*.xlsx
 build_excel.py
 generate_tracker.py
+
+.vercel

@@ -1,0 +1,16 @@
+node_modules
+.git
+.env
+.env.local
+SENSITIVE.env
+uploads
+.vercel
+whop_com.html
+Creator_Tracker*.csv
+Creator_Tracker*.xlsx
+build_excel.py
+generate_tracker.py
+PAYMENT.md
+schema.sql
+.gitignore
+.vercelignore
