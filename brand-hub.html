@@ -7,8 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=9">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
 
@@ -41,6 +40,10 @@
                 <button class="vsb-item" data-bview="new-campaign" onclick="switchBrandView('new-campaign', this)" title="New Campaign">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                     New Campaign
+                </button>
+                <button class="vsb-item" data-bview="invoices" onclick="switchBrandView('invoices', this)" title="Invoices">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Invoices
                 </button>
                 <button class="vsb-item" data-bview="profile" onclick="switchBrandView('profile', this)" title="Brand Profile">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><rect x="3" y="3" width="18" height="6" rx="2"/></svg>
@@ -213,6 +216,17 @@
                     </section>
                 </div>
 
+                <!-- ═══ INVOICES VIEW ═══ -->
+                <div id="view-invoices" style="display:none;">
+                    <header style="margin-bottom: 40px;">
+                        <h1 style="font-size: 40px; letter-spacing: -2px; line-height:1.1; margin-bottom: 12px;">Invoices</h1>
+                        <p style="color:#666; font-size:16px;">Download and track all your campaign invoices.</p>
+                    </header>
+                    <section style="background:#fff; border:1px solid #eee; border-radius: 24px; padding:32px;">
+                        <div id="invoices-area"><p style="color:#999; font-size:14px;">Loading...</p></div>
+                    </section>
+                </div>
+
                 <!-- ═══ PROFILE VIEW ═══ -->
                 <div id="view-profile" style="display:none;">
                     <header style="margin-bottom: 40px;">
@@ -300,13 +314,14 @@
 
         // ── View Switching ──────────────────────────────────────────────
         function switchBrandView(view) {
-            ['dashboard', 'campaigns', 'new-campaign', 'profile'].forEach(v => {
+            ['dashboard', 'campaigns', 'new-campaign', 'invoices', 'profile'].forEach(v => {
                 document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
             });
             document.querySelectorAll('.vsb-item[data-bview]').forEach(i => {
                 i.classList.toggle('active', i.dataset.bview === view);
             });
             if (view === 'campaigns') loadBrandCampaigns();
+            if (view === 'invoices') loadInvoices();
             if (view === 'profile') loadBrandProfile();
         }
 
@@ -411,7 +426,7 @@
 
                 msgEl.style.display = 'block';
                 msgEl.style.color = '#16A34A';
-                msgEl.innerText = 'Campaign created! Opening payment...';
+                msgEl.innerText = 'Campaign created! Now complete payment to activate it.';
 
                 // Clear form
                 document.getElementById('nc-title').value = '';
@@ -423,9 +438,9 @@
                 document.getElementById('nc-refs').value = '';
                 document.getElementById('nc-budget-preview').innerText = '₹0';
 
-                // Auto-trigger payment for this campaign
+                // Show payment panel for this campaign
                 if (data.data && data.data.id) {
-                    setTimeout(() => payForCampaign(data.data.id, data.data.title, data.data.total_budget), 500);
+                    setTimeout(() => openPaymentPanel(data.data.id, data.data.title, data.data.total_budget), 500);
                 }
 
             } catch (err) {
@@ -438,87 +453,138 @@
             }
         }
 
-        // ── Razorpay Payment ────────────────────────────────────────────
-        async function payForCampaign(campaignId, title, budgetINR) {
+        // ── Bank Transfer Payment ───────────────────────────────────────
+        let paymentInfo = null;
+
+        async function loadPaymentInfo() {
             try {
-                // Step 1: Create Razorpay Order
-                const orderRes = await fetch('/api/brand/campaign/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: brandEmail, campaign_id: campaignId })
-                });
-                const orderData = await orderRes.json();
-                if (!orderRes.ok) throw new Error(orderData.error);
-
-                // Step 2: Open Razorpay Checkout
-                const options = {
-                    key: orderData.key,
-                    amount: orderData.amount,
-                    currency: orderData.currency,
-                    name: 'Velt Industries',
-                    description: `Campaign: ${title || 'Campaign Payment'}`,
-                    order_id: orderData.order_id,
-                    prefill: {
-                        email: brandEmail,
-                        contact: ''
-                    },
-                    theme: { color: '#FF6B35' },
-                    handler: async function(response) {
-                        // Step 3: Verify payment
-                        try {
-                            const verifyRes = await fetch('/api/brand/campaign/verify-payment', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    email: brandEmail,
-                                    campaign_id: campaignId,
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature
-                                })
-                            });
-                            const verifyData = await verifyRes.json();
-                            if (verifyData.success) {
-                                showPaymentSuccess(budgetINR || (orderData.amount / 100));
-                                loadDashboardStats();
-                                loadBrandCampaigns();
-                            } else {
-                                alert('Payment verification failed. Contact support.');
-                            }
-                        } catch (err) {
-                            alert('Verification error: ' + err.message);
-                        }
-                    },
-                    modal: {
-                        ondismiss: function() {
-                            const msgEl = document.getElementById('nc-msg');
-                            if (msgEl) {
-                                msgEl.style.display = 'block';
-                                msgEl.style.color = '#CA8A04';
-                                msgEl.innerText = 'Payment cancelled. You can pay later from the Campaigns tab.';
-                            }
-                            loadBrandCampaigns();
-                        }
-                    }
-                };
-
-                const rzp = new Razorpay(options);
-                rzp.on('payment.failed', function(response) {
-                    alert('Payment failed: ' + (response.error?.description || 'Unknown error'));
-                });
-                rzp.open();
-
-            } catch (err) {
-                alert('Payment error: ' + err.message);
-            }
+                const res = await fetch(`/api/brand/payment-info?email=${encodeURIComponent(brandEmail)}`);
+                const data = await res.json();
+                if (data.success) paymentInfo = data.payment_methods;
+            } catch (e) { console.warn('Payment info load error'); }
         }
 
-        function showPaymentSuccess(amountINR) {
-            const msgEl = document.getElementById('nc-msg');
-            if (msgEl) {
-                msgEl.style.display = 'block';
-                msgEl.style.color = '#16A34A';
-                msgEl.innerHTML = `<strong>Payment of ₹${Number(amountINR).toLocaleString('en-IN')} successful!</strong> Your campaign is now submitted for CEO review.`;
+        function openPaymentPanel(campaignId, title, budgetINR) {
+            // Remove old panel if exists
+            const old = document.getElementById('payment-panel-overlay');
+            if (old) old.remove();
+
+            const bank = paymentInfo?.bank_transfer || {};
+            const upi = paymentInfo?.upi || {};
+
+            const overlay = document.createElement('div');
+            overlay.id = 'payment-panel-overlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
+            overlay.innerHTML = `
+                <div style="background:#fff; border-radius:24px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; padding:36px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+                        <h2 style="font-size:22px; font-weight:800; letter-spacing:-1px; margin:0;">Complete Payment</h2>
+                        <button onclick="document.getElementById('payment-panel-overlay').remove()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#999;">&times;</button>
+                    </div>
+
+                    <div style="background:#FFF5F2; border:1px solid #FFD4C4; border-radius:14px; padding:20px; margin-bottom:20px;">
+                        <div style="font-size:12px; font-weight:700; color:#FF6B35; text-transform:uppercase; margin-bottom:4px;">Campaign</div>
+                        <div style="font-size:16px; font-weight:700; color:#111; margin-bottom:8px;">${title || 'Campaign'}</div>
+                        <div style="font-size:28px; font-weight:800; color:#111;">₹${Number(budgetINR).toLocaleString('en-IN')}</div>
+                    </div>
+
+                    <div style="margin-bottom:20px;">
+                        <div style="font-size:13px; font-weight:700; color:#111; margin-bottom:12px;">Transfer to this account:</div>
+
+                        ${bank.account_number ? `
+                        <div style="background:#F9FAFB; border:1px solid #eee; border-radius:12px; padding:16px; margin-bottom:12px;">
+                            <div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">Bank Transfer (NEFT / IMPS / RTGS)</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                <div><div style="font-size:10px; color:#999; font-weight:600;">Account Name</div><div style="font-size:14px; font-weight:700;">${bank.account_name}</div></div>
+                                <div><div style="font-size:10px; color:#999; font-weight:600;">Bank</div><div style="font-size:14px; font-weight:700;">${bank.bank_name}</div></div>
+                                <div><div style="font-size:10px; color:#999; font-weight:600;">Account Number</div><div style="font-size:14px; font-weight:700; letter-spacing:1px;">${bank.account_number}</div></div>
+                                <div><div style="font-size:10px; color:#999; font-weight:600;">IFSC Code</div><div style="font-size:14px; font-weight:700;">${bank.ifsc}</div></div>
+                            </div>
+                        </div>` : ''}
+
+                        ${upi.upi_id ? `
+                        <div style="background:#F0FFF4; border:1px solid #BBF7D0; border-radius:12px; padding:16px; margin-bottom:12px;">
+                            <div style="font-size:11px; font-weight:700; color:#16A34A; text-transform:uppercase; margin-bottom:6px;">UPI Transfer</div>
+                            <div style="font-size:16px; font-weight:800; color:#111;">${upi.upi_id}</div>
+                        </div>` : ''}
+                    </div>
+
+                    <div style="border-top:1px solid #eee; padding-top:20px;">
+                        <div style="font-size:13px; font-weight:700; color:#111; margin-bottom:12px;">After transfer, submit proof:</div>
+
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:5px;">UTR / Transaction Number *</label>
+                            <input id="pp-utr" type="text" placeholder="Enter UTR or transaction reference number" style="width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:10px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;">
+                        </div>
+
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:5px;">Payment Screenshot (optional)</label>
+                            <input id="pp-screenshot" type="file" accept="image/*" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; font-size:13px; font-family:inherit; box-sizing:border-box;">
+                        </div>
+
+                        <div style="margin-bottom:16px;">
+                            <label style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; display:block; margin-bottom:5px;">Note (optional)</label>
+                            <input id="pp-note" type="text" placeholder="e.g. Paid from HDFC account" style="width:100%; padding:12px 14px; border:1px solid #ddd; border-radius:10px; font-size:14px; font-family:inherit; box-sizing:border-box; outline:none;">
+                        </div>
+
+                        <button id="btn-submit-proof" onclick="submitPaymentProof('${campaignId}')" style="width:100%; background:#FF6B35; color:#fff; padding:16px; border-radius:12px; font-weight:700; font-size:16px; font-family:inherit; cursor:pointer; border:none;">
+                            Submit Payment Proof
+                        </button>
+                        <p id="pp-msg" style="margin:8px 0 0 0; font-size:13px; font-weight:500; text-align:center; display:none;"></p>
+                    </div>
+                </div>`;
+
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        }
+
+        async function submitPaymentProof(campaignId) {
+            const utr = document.getElementById('pp-utr').value.trim();
+            const screenshot = document.getElementById('pp-screenshot').files[0];
+            const note = document.getElementById('pp-note').value.trim();
+            const msgEl = document.getElementById('pp-msg');
+            const btn = document.getElementById('btn-submit-proof');
+
+            if (!utr) {
+                msgEl.style.display = 'block'; msgEl.style.color = '#EF4444';
+                msgEl.innerText = 'UTR / Transaction number is required.';
+                return;
+            }
+
+            btn.disabled = true; btn.innerText = 'Submitting...';
+
+            try {
+                const formData = new FormData();
+                formData.append('email', brandEmail);
+                formData.append('campaign_id', campaignId);
+                formData.append('utr_number', utr);
+                if (note) formData.append('payment_note', note);
+                if (screenshot) formData.append('screenshot', screenshot);
+
+                const res = await fetch('/api/brand/campaign/submit-payment-proof', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                msgEl.style.display = 'block'; msgEl.style.color = '#16A34A';
+                msgEl.innerText = 'Payment proof submitted! CEO will verify it shortly.';
+                btn.style.display = 'none';
+
+                // Auto-close after 2 seconds and refresh campaigns
+                setTimeout(() => {
+                    const overlay = document.getElementById('payment-panel-overlay');
+                    if (overlay) overlay.remove();
+                    loadBrandCampaigns();
+                    loadDashboardStats();
+                }, 2000);
+
+            } catch (err) {
+                msgEl.style.display = 'block'; msgEl.style.color = '#EF4444';
+                msgEl.innerText = 'Error: ' + err.message;
+            } finally {
+                btn.disabled = false; btn.innerText = 'Submit Payment Proof';
             }
         }
 
@@ -553,9 +619,10 @@
             };
 
             const paymentConfig = {
-                'unpaid':        { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'UNPAID' },
-                'order_created': { bg: 'rgba(234,179,8,0.1)', color: '#CA8A04', label: 'PAYMENT PENDING' },
-                'paid':          { bg: 'rgba(16,185,129,0.1)', color: '#10B981', label: 'PAID' }
+                'unpaid':            { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'UNPAID' },
+                'proof_submitted':   { bg: 'rgba(234,179,8,0.1)', color: '#CA8A04', label: 'PROOF SENT' },
+                'paid':              { bg: 'rgba(16,185,129,0.1)', color: '#10B981', label: 'VERIFIED' },
+                'payment_rejected':  { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'REJECTED' }
             };
 
             let html = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr>
@@ -566,7 +633,7 @@
                 const sc = statusConfig[c.status] || statusConfig['pending_review'];
                 const pc = paymentConfig[c.payment_status] || paymentConfig['unpaid'];
                 const date = new Date(c.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
-                const isPaid = c.payment_status === 'paid';
+                const needsPay = !c.payment_status || c.payment_status === 'unpaid' || c.payment_status === 'payment_rejected';
 
                 html += `<tr>
                     <td>
@@ -578,7 +645,7 @@
                     <td>${c.claimed_slots}/${c.total_slots}</td>
                     <td><span style="background:${pc.bg}; color:${pc.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${pc.label}</span></td>
                     <td><span style="background:${sc.bg}; color:${sc.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${sc.label}</span></td>
-                    <td>${!isPaid ? `<button onclick="payForCampaign('${c.id}', '${c.title.replace(/'/g,"\\'")}', ${c.total_budget})" style="background:#FF6B35; color:#fff; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; border:none; cursor:pointer; font-family:inherit;">Pay ₹${(c.total_budget || 0).toLocaleString('en-IN')}</button>` : `<span style="font-size:12px; color:#10B981; font-weight:600;">Paid</span>`}</td>
+                    <td>${needsPay ? `<button onclick="openPaymentPanel('${c.id}', '${c.title.replace(/'/g,"\\'")}', ${c.total_budget})" style="background:#FF6B35; color:#fff; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; border:none; cursor:pointer; font-family:inherit;">Pay ₹${(c.total_budget || 0).toLocaleString('en-IN')}</button>` : c.payment_status === 'proof_submitted' ? `<span style="font-size:12px; color:#CA8A04; font-weight:600;">Verifying...</span>` : `<span style="font-size:12px; color:#10B981; font-weight:600;">Paid</span>`}</td>
                 </tr>`;
 
                 if (c.ceo_notes) {
@@ -722,6 +789,56 @@
             }
         }
 
+        // ── Invoices ────────────────────────────────────────────────────
+        async function loadInvoices() {
+            const area = document.getElementById('invoices-area');
+            area.innerHTML = '<p style="color:#999;">Loading...</p>';
+
+            try {
+                const res = await fetch(`/api/invoice/list?email=${encodeURIComponent(brandEmail)}`);
+                const body = await res.json();
+                const invoices = body.data || [];
+
+                if (!invoices.length) {
+                    area.innerHTML = '<p style="color:#999; font-size:14px;">No invoices yet. Create a campaign to generate your first invoice.</p>';
+                    return;
+                }
+
+                const statusConfig = {
+                    'generated': { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6', label: 'GENERATED' },
+                    'paid':      { bg: 'rgba(16,185,129,0.1)', color: '#10B981', label: 'PAID' },
+                    'cancelled': { bg: 'rgba(239,68,68,0.1)', color: '#EF4444', label: 'CANCELLED' }
+                };
+
+                let html = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+                    <th>Invoice</th><th>Campaign</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th>
+                </tr></thead><tbody>`;
+
+                invoices.forEach(inv => {
+                    const sc = statusConfig[inv.status] || statusConfig['generated'];
+                    const date = new Date(inv.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+
+                    html += `<tr>
+                        <td style="font-weight:700; font-size:13px;">${inv.invoice_number}</td>
+                        <td>
+                            <div style="font-weight:600;">${inv.campaign_title || '-'}</div>
+                            <div style="font-size:11px; color:#999;">${inv.total_slots || 0} slots × ₹${inv.pay_per_reel || 0}/reel</div>
+                        </td>
+                        <td style="font-weight:800; font-size:15px;">₹${(inv.amount||0).toLocaleString('en-IN')}</td>
+                        <td><span style="background:${sc.bg}; color:${sc.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${sc.label}</span></td>
+                        <td style="font-size:12px; color:#666;">${date}</td>
+                        <td><a href="/api/invoice/download/${inv.campaign_id}?email=${encodeURIComponent(brandEmail)}" target="_blank" style="background:#111; color:#fff; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; text-decoration:none; display:inline-block;">Download PDF</a></td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table></div>';
+                area.innerHTML = html;
+
+            } catch (err) {
+                area.innerHTML = `<p style="color:#EF4444;">Error: ${err.message}</p>`;
+            }
+        }
+
         // ── Init ────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             restoreBrandSidebarState();
@@ -729,6 +846,7 @@
             loadBrandSession();
             loadDashboardStats();
             loadBrandProfile();
+            loadPaymentInfo();
 
             // Budget preview listeners
             const payInput = document.getElementById('nc-pay');

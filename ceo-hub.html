@@ -56,9 +56,13 @@
                 </button>
 
                 <div class="vsb-divider"></div>
+                <button class="vsb-item" data-view="payments" onclick="nav('payments')" title="Brand Payments">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    Brand Payments
+                </button>
                 <button class="vsb-item" data-view="payouts" onclick="nav('payouts')" title="Payouts">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    Payouts
+                    Creator Payouts
                 </button>
                 <button class="vsb-item" data-view="analytics" onclick="nav('analytics')" title="Analytics">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -194,10 +198,41 @@
                     </section>
                 </div>
 
+                <!-- ═══ BRAND PAYMENTS ═══ -->
+                <div id="view-payments" style="display:none;">
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Brand Payments</h1>
+                    <p style="color:#666; margin-bottom:32px;">Verify brand payment proofs and track revenue.</p>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:32px;">
+                        <div style="padding:24px; border:1px solid #eee; border-radius:20px;">
+                            <div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">Pending Verification</div>
+                            <div style="font-size:36px; font-weight:800;" id="pay-stat-pending">0</div>
+                        </div>
+                        <div style="padding:24px; border:1px solid #eee; border-radius:20px;">
+                            <div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">Total Verified Revenue</div>
+                            <div style="font-size:36px; font-weight:800;" id="pay-stat-revenue">₹0</div>
+                        </div>
+                        <div style="padding:24px; border:1px solid #eee; border-radius:20px;">
+                            <div style="font-size:11px; font-weight:700; color:#999; text-transform:uppercase; margin-bottom:8px;">Paid Campaigns</div>
+                            <div style="font-size:36px; font-weight:800;" id="pay-stat-paid">0</div>
+                        </div>
+                    </div>
+
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px; margin-bottom:24px;">
+                        <h2 style="font-size:20px; margin-bottom:20px;">Pending Payment Proofs</h2>
+                        <div id="pending-payments-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+
+                    <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
+                        <h2 style="font-size:20px; margin-bottom:20px;">All Campaign Payments</h2>
+                        <div id="all-payments-area"><p style="color:#999;">Loading...</p></div>
+                    </section>
+                </div>
+
                 <!-- ═══ PAYOUTS ═══ -->
                 <div id="view-payouts" style="display:none;">
-                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Payout History</h1>
-                    <p style="color:#666; margin-bottom:32px;">All payment transactions.</p>
+                    <h1 style="font-size:40px; letter-spacing:-2px; margin-bottom:12px;">Creator Payouts</h1>
+                    <p style="color:#666; margin-bottom:32px;">All creator payout transactions.</p>
                     <section style="background:#fff; border:1px solid #eee; border-radius:24px; padding:32px;">
                         <div id="payouts-area"><p style="color:#999;">Loading...</p></div>
                     </section>
@@ -216,7 +251,7 @@
 
     <script>
         const adminEmail = localStorage.getItem('user_email');
-        const ALL_VIEWS = ['overview','brands','campaigns','creators','enrolled','submissions','payouts','analytics'];
+        const ALL_VIEWS = ['overview','brands','campaigns','creators','enrolled','submissions','payments','payouts','analytics'];
         let allData = {};
 
         function nav(view) {
@@ -226,7 +261,7 @@
             document.querySelectorAll('.vsb-item').forEach(i => {
                 i.classList.toggle('active', i.dataset.view === view);
             });
-            const loaders = { brands: loadBrands, campaigns: loadCampaigns, creators: loadCreators, enrolled: loadEnrolled, submissions: loadSubmissions, payouts: loadPayouts, analytics: loadAnalytics };
+            const loaders = { brands: loadBrands, campaigns: loadCampaigns, creators: loadCreators, enrolled: loadEnrolled, submissions: loadSubmissions, payments: loadBrandPayments, payouts: loadPayouts, analytics: loadAnalytics };
             if (loaders[view]) loaders[view]();
         }
 
@@ -486,6 +521,102 @@
                 msgEl.style.display='block'; msgEl.style.color='#16A34A'; msgEl.innerText='Review saved!';
                 loadSubmissions(); loadOverview();
             } catch(e) { msgEl.style.display='block'; msgEl.style.color='#EF4444'; msgEl.innerText=e.message; }
+        }
+
+        // ═══ BRAND PAYMENTS ═══
+        async function loadBrandPayments() {
+            const pendingArea = document.getElementById('pending-payments-area');
+            const allArea = document.getElementById('all-payments-area');
+            pendingArea.innerHTML = '<p style="color:#999;">Loading...</p>';
+            allArea.innerHTML = '<p style="color:#999;">Loading...</p>';
+
+            try {
+                const [pendingRes, revenueRes, allCampaignsRes] = await Promise.all([
+                    fetch(`/api/brand/pending-payments?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/brand/platform-revenue?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json()),
+                    fetch(`/api/brand/all-campaigns?admin_email=${encodeURIComponent(adminEmail)}`).then(r=>r.json())
+                ]);
+
+                const pending = pendingRes.data || [];
+                const allCampaigns = allCampaignsRes.data || [];
+                const paidCampaigns = allCampaigns.filter(c => c.payment_status === 'paid');
+
+                // Stats
+                document.getElementById('pay-stat-pending').innerText = pending.length;
+                document.getElementById('pay-stat-revenue').innerText = '₹' + (revenueRes.total_collected_inr || 0).toLocaleString('en-IN');
+                document.getElementById('pay-stat-paid').innerText = paidCampaigns.length;
+
+                // Pending payment proofs
+                if (!pending.length) {
+                    pendingArea.innerHTML = '<p style="color:#999;">No pending payment proofs.</p>';
+                } else {
+                    pendingArea.innerHTML = pending.map(c => `
+                        <div style="border:1px solid #eee; border-radius:16px; padding:20px; margin-bottom:16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                                <div>
+                                    <div style="font-size:16px; font-weight:700;">${c.title}</div>
+                                    <div style="font-size:13px; color:#666;">${c.brands?.company_name || c.brand_email} · ${c.brand_email}</div>
+                                </div>
+                                <div style="font-size:24px; font-weight:800;">₹${(c.total_budget||0).toLocaleString('en-IN')}</div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+                                <div style="background:#F9FAFB; padding:10px 14px; border-radius:10px;">
+                                    <div style="font-size:10px; font-weight:700; color:#999; text-transform:uppercase;">UTR Number</div>
+                                    <div style="font-size:14px; font-weight:700; color:#111; margin-top:2px;">${c.payment_utr || '-'}</div>
+                                </div>
+                                <div style="background:#F9FAFB; padding:10px 14px; border-radius:10px;">
+                                    <div style="font-size:10px; font-weight:700; color:#999; text-transform:uppercase;">Submitted</div>
+                                    <div style="font-size:14px; font-weight:600; color:#111; margin-top:2px;">${c.paid_at ? new Date(c.paid_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '-'}</div>
+                                </div>
+                                <div style="background:#F9FAFB; padding:10px 14px; border-radius:10px;">
+                                    <div style="font-size:10px; font-weight:700; color:#999; text-transform:uppercase;">Note</div>
+                                    <div style="font-size:13px; color:#111; margin-top:2px;">${c.payment_proof_note || '-'}</div>
+                                </div>
+                            </div>
+                            ${c.payment_screenshot_url ? `<div style="margin-bottom:16px;"><a href="${c.payment_screenshot_url}" target="_blank" style="font-size:13px; color:#3b82f6; font-weight:600; text-decoration:none;">View Payment Screenshot &rarr;</a></div>` : ''}
+                            <div style="display:flex; gap:8px;">
+                                <button onclick="verifyBrandPayment('${c.id}', true)" style="flex:1; background:#10B981; color:#fff; padding:10px; border-radius:8px; font-weight:700; font-size:14px; border:none; cursor:pointer; font-family:inherit;">Verify Payment</button>
+                                <button onclick="verifyBrandPayment('${c.id}', false)" style="flex:1; background:#fff; color:#EF4444; padding:10px; border-radius:8px; font-weight:700; font-size:14px; border:1px solid #EF4444; cursor:pointer; font-family:inherit;">Reject</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // All campaigns payment status
+                const payBadge = {'paid':{bg:'rgba(16,185,129,0.1)',color:'#10B981',label:'PAID'},'proof_submitted':{bg:'rgba(234,179,8,0.1)',color:'#CA8A04',label:'PROOF SENT'},'unpaid':{bg:'rgba(239,68,68,0.1)',color:'#EF4444',label:'UNPAID'},'payment_rejected':{bg:'rgba(239,68,68,0.1)',color:'#EF4444',label:'REJECTED'}};
+                const withPayment = allCampaigns.filter(c => c.payment_status && c.payment_status !== 'unpaid');
+                if (!withPayment.length) {
+                    allArea.innerHTML = '<p style="color:#999;">No payment activity yet.</p>';
+                } else {
+                    allArea.innerHTML = table([{label:'Campaign'},{label:'Brand'},{label:'Budget'},{label:'UTR'},{label:'Payment'},{label:'Date'}],
+                        withPayment.map(c => {
+                            const pb = payBadge[c.payment_status] || payBadge['unpaid'];
+                            return `<tr>
+                                <td style="font-weight:700;">${c.title}</td>
+                                <td>${c.brands?.company_name||c.brand_email}</td>
+                                <td style="font-weight:700;">₹${(c.total_budget||0).toLocaleString('en-IN')}</td>
+                                <td style="font-size:13px;">${c.payment_utr||'-'}</td>
+                                <td><span style="background:${pb.bg}; color:${pb.color}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:800;">${pb.label}</span></td>
+                                <td style="font-size:12px; color:#666;">${c.paid_at ? new Date(c.paid_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '-'}</td>
+                            </tr>`;
+                        }).join(''));
+                }
+            } catch (err) { pendingArea.innerHTML = `<p style="color:#EF4444;">${err.message}</p>`; }
+        }
+
+        async function verifyBrandPayment(campaignId, verified) {
+            const note = verified ? '' : prompt('Rejection reason (optional):') || '';
+            try {
+                const res = await fetch('/api/brand/campaign/verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_email: adminEmail, campaign_id: campaignId, verified, rejection_note: note })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                loadBrandPayments();
+                loadOverview();
+            } catch (err) { alert('Error: ' + err.message); }
         }
 
         // ═══ PAYOUTS ═══

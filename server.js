@@ -16,6 +16,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/creator', require('./routes/creator'));
 app.use('/api/brand', require('./routes/brand'));
 app.use('/api/user', require('./routes/user'));
+app.use('/api/invoice', require('./routes/invoice'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
