@@ -11,6 +11,7 @@ CREATE TABLE users (
     email             TEXT NOT NULL UNIQUE,
     name              TEXT,
     picture           TEXT,
+    username          TEXT UNIQUE,                       -- unique handle e.g. @dhananjay
     role              TEXT NOT NULL DEFAULT 'creator',  -- 'creator' | 'brand' | 'ceo'
     profile_complete  BOOLEAN DEFAULT FALSE,
     last_login        TIMESTAMPTZ DEFAULT NOW(),
@@ -20,6 +21,7 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
+CREATE UNIQUE INDEX idx_users_username ON users(username) WHERE username IS NOT NULL;
 
 -- ── Creator Profiles: detailed info for creators ──────────────────────────────
 CREATE TABLE creator_profiles (

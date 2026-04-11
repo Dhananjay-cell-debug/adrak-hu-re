@@ -17,7 +17,7 @@
         <nav class="navbar" style="border-bottom: none; background: transparent;">
             <div class="nav-left">
                 <a href="index.html" class="nav-logo" style="font-size: 24px; font-weight: 900; letter-spacing: -1px; color: #111; display:flex; align-items:center; gap:8px;">
-                    <svg width="32" height="22" viewBox="0 0 120 80" fill="none"><path d="M10 70L30 10L50 50L70 10L90 70" stroke="#111" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M80 30L110 70" stroke="#111" stroke-width="14" stroke-linecap="round"/></svg>
+                    <svg width="32" height="22" viewBox="0 0 120 80" fill="none"><path d="M10 10L60 72L110 10" stroke="#111" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Velt Industries
                 </a>
             </div>
@@ -130,6 +130,45 @@
         </div>
     </main>
 
+    <!-- ═══ USERNAME CREATION (shown after role selection for new users) ═══ -->
+    <main class="lp-hero" id="username-setup" style="display:none;">
+        <div class="lp-hero-inner" style="max-width:500px;">
+            <div style="display:flex; align-items:center; gap:14px; justify-content:center; margin-bottom:40px;">
+                <img id="us-avatar" src="" style="width:48px; height:48px; border-radius:50%; display:none;">
+                <div style="text-align:left;">
+                    <p style="font-size:14px; color:#666; margin:0;">Almost there,</p>
+                    <p id="us-name" style="font-size:18px; font-weight:700; margin:0;">User</p>
+                </div>
+            </div>
+
+            <h1 style="font-size: 48px; letter-spacing: -3px; margin-bottom: 16px; line-height:1.1;">Create your<br>username</h1>
+            <p style="font-size: 16px; color: var(--text-muted); max-width: 420px; margin: 0 auto 36px;">Pick a unique username for your Velt Industries profile. This is how others will find you.</p>
+
+            <div style="max-width:400px; margin:0 auto;">
+                <div style="position:relative;">
+                    <div style="position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:18px; font-weight:700; color:#999;">@</div>
+                    <input type="text" id="username-input" placeholder="yourname" maxlength="20"
+                        style="width:100%; padding:18px 18px 18px 38px; border:2px solid #eee; border-radius:16px; font-size:18px; font-weight:600; font-family:inherit; outline:none; transition:border-color 0.2s; box-sizing:border-box;"
+                        oninput="onUsernameInput(this.value)">
+                </div>
+                <div id="username-status" style="margin-top:10px; font-size:13px; font-weight:600; min-height:20px; text-align:left;"></div>
+            </div>
+
+            <div style="margin-top:8px; text-align:left; max-width:400px; margin:8px auto 0;">
+                <p style="font-size:11px; color:#999; line-height:1.6;">3-20 characters &middot; Starts with a letter &middot; Only lowercase letters, numbers, underscores</p>
+            </div>
+
+            <button id="btn-claim-username" onclick="claimUsername()" disabled
+                style="margin-top:28px; background:#111; color:#fff; padding:18px 48px; border-radius:16px; font-size:17px; font-weight:700; font-family:inherit; cursor:pointer; border:none; opacity:0.4; transition:opacity 0.2s;">
+                Claim Username
+            </button>
+
+            <p style="margin-top:20px; font-size:13px; color:#999;">
+                <a href="#" onclick="logout()" style="color:#666; text-decoration:underline;">Sign in with a different account</a>
+            </p>
+        </div>
+    </main>
+
     <section class="marketing-footer" id="marketing-footer" style="background:#000; color:#fff; padding:100px 60px; border-radius:40px 40px 0 0; margin-top:100px;">
         <div style="max-width: 600px;">
             <h2 style="font-size: 56px; margin-bottom: 24px; letter-spacing: -3px;">Trusted by the best.</h2>
@@ -144,10 +183,15 @@
             transform: translateY(-4px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.06);
         }
+        #username-input:focus {
+            border-color: #111;
+        }
     </style>
 
     <script>
         const ADMIN_EMAIL = 'dhananjaychitmila@gmail.com';
+        let usernameCheckTimer = null;
+        let usernameAvailable = false;
 
         // Simple JWT Decoder
         function parseJwt(token) {
@@ -171,21 +215,55 @@
             localStorage.setItem('user_name', responsePayload.name);
             localStorage.setItem('user_picture', responsePayload.picture);
 
+            // Register user in backend & check username
+            registerAndRoute(responsePayload);
+        }
+
+        async function registerAndRoute(payload) {
+            try {
+                const res = await fetch('/api/user/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: payload.email, name: payload.name, picture: payload.picture })
+                });
+                const data = await res.json();
+                if (data.success && data.user) {
+                    // Store username if exists
+                    if (data.user.username) {
+                        localStorage.setItem('user_username', data.user.username);
+                    }
+                    if (data.user.role && data.user.role !== 'creator') {
+                        localStorage.setItem('user_role', data.user.role);
+                    }
+                }
+            } catch (e) {
+                console.warn('Register call failed, continuing...', e);
+            }
+
             // Check if user already has a saved role
             const savedRole = localStorage.getItem('user_role');
-            if (savedRole) {
-                routeToHub(savedRole, responsePayload.email);
+            const savedUsername = localStorage.getItem('user_username');
+
+            if (savedRole && savedUsername) {
+                routeToHub(savedRole, payload.email);
                 return;
             }
 
-            // Show role selection
-            showRoleSelection(responsePayload);
+            if (savedRole && !savedUsername) {
+                // Has role but no username — show username setup
+                showUsernameSetup();
+                return;
+            }
+
+            // No role — show role selection
+            showRoleSelection(payload);
         }
 
         function showRoleSelection(payload) {
             document.getElementById('landing-page').style.display = 'none';
             document.getElementById('marketing-footer').style.display = 'none';
             document.getElementById('role-selection').style.display = 'block';
+            document.getElementById('username-setup').style.display = 'none';
 
             document.getElementById('rs-name').innerText = payload.name || payload.email;
             if (payload.picture) {
@@ -203,7 +281,127 @@
         function selectRole(role) {
             localStorage.setItem('user_role', role);
             const email = localStorage.getItem('user_email');
-            routeToHub(role, email);
+
+            // Register role on backend
+            fetch('/api/user/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, role })
+            }).catch(() => {});
+
+            // Check if username exists
+            const savedUsername = localStorage.getItem('user_username');
+            if (savedUsername) {
+                routeToHub(role, email);
+            } else {
+                showUsernameSetup();
+            }
+        }
+
+        function showUsernameSetup() {
+            document.getElementById('landing-page').style.display = 'none';
+            document.getElementById('marketing-footer').style.display = 'none';
+            document.getElementById('role-selection').style.display = 'none';
+            document.getElementById('username-setup').style.display = 'block';
+
+            const name = localStorage.getItem('user_name') || 'User';
+            const picture = localStorage.getItem('user_picture');
+
+            document.getElementById('us-name').innerText = name;
+            if (picture) {
+                const avatar = document.getElementById('us-avatar');
+                avatar.src = picture;
+                avatar.style.display = 'block';
+            }
+
+            // Auto-suggest username from name
+            const suggested = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
+            if (suggested.length >= 3) {
+                document.getElementById('username-input').value = suggested;
+                onUsernameInput(suggested);
+            }
+
+            document.getElementById('username-input').focus();
+        }
+
+        function onUsernameInput(value) {
+            const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            document.getElementById('username-input').value = clean;
+
+            const statusEl = document.getElementById('username-status');
+            const btn = document.getElementById('btn-claim-username');
+            usernameAvailable = false;
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+
+            if (clean.length < 3) {
+                statusEl.innerHTML = clean.length > 0 ? '<span style="color:#EF4444;">Too short — minimum 3 characters</span>' : '';
+                return;
+            }
+
+            if (!/^[a-z]/.test(clean)) {
+                statusEl.innerHTML = '<span style="color:#EF4444;">Must start with a letter</span>';
+                return;
+            }
+
+            statusEl.innerHTML = '<span style="color:#999;">Checking...</span>';
+
+            // Debounce
+            clearTimeout(usernameCheckTimer);
+            usernameCheckTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/user/check-username?username=${encodeURIComponent(clean)}`);
+                    const data = await res.json();
+                    if (data.available) {
+                        statusEl.innerHTML = '<span style="color:#16A34A;">@' + clean + ' is available!</span>';
+                        usernameAvailable = true;
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                    } else {
+                        statusEl.innerHTML = '<span style="color:#EF4444;">' + (data.reason || 'Username taken') + '</span>';
+                    }
+                } catch (e) {
+                    statusEl.innerHTML = '<span style="color:#EF4444;">Could not check — try again</span>';
+                }
+            }, 400);
+        }
+
+        async function claimUsername() {
+            const username = document.getElementById('username-input').value.trim();
+            if (!usernameAvailable || !username) return;
+
+            const btn = document.getElementById('btn-claim-username');
+            const statusEl = document.getElementById('username-status');
+            btn.disabled = true;
+            btn.innerText = 'Claiming...';
+            btn.style.opacity = '0.6';
+
+            try {
+                const email = localStorage.getItem('user_email');
+                const res = await fetch('/api/user/set-username', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, username })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('user_username', data.username);
+                    statusEl.innerHTML = '<span style="color:#16A34A;">You are @' + data.username + ' — redirecting...</span>';
+                    const role = localStorage.getItem('user_role');
+                    setTimeout(() => routeToHub(role, email), 800);
+                } else {
+                    statusEl.innerHTML = '<span style="color:#EF4444;">' + (data.error || 'Failed to claim username') + '</span>';
+                    btn.disabled = false;
+                    btn.innerText = 'Claim Username';
+                    btn.style.opacity = '1';
+                }
+            } catch (e) {
+                statusEl.innerHTML = '<span style="color:#EF4444;">Network error — try again</span>';
+                btn.disabled = false;
+                btn.innerText = 'Claim Username';
+                btn.style.opacity = '1';
+            }
         }
 
         function routeToHub(role, email) {
@@ -221,8 +419,11 @@
             const existingEmail = localStorage.getItem('user_email');
             if (existingEmail) {
                 const savedRole = localStorage.getItem('user_role');
-                if (savedRole) {
+                const savedUsername = localStorage.getItem('user_username');
+                if (savedRole && savedUsername) {
                     routeToHub(savedRole, existingEmail);
+                } else if (savedRole && !savedUsername) {
+                    showUsernameSetup();
                 } else {
                     // Show role selection with stored data
                     showRoleSelection({
@@ -282,11 +483,37 @@
             animateValue("stat-users", 0, stats.totalUsers, 1000);
             animateValue("stat-enrolled", 0, stats.totalEnrolled, 1000);
 
-            // If user is already logged in and has a role, redirect
+            // If user is already logged in, check full flow
             const existingEmail = localStorage.getItem('user_email');
             const savedRole = localStorage.getItem('user_role');
-            if (existingEmail && savedRole) {
+            const savedUsername = localStorage.getItem('user_username');
+
+            if (existingEmail && savedRole && savedUsername) {
                 routeToHub(savedRole, existingEmail);
+            } else if (existingEmail && savedRole && !savedUsername) {
+                // Has role but no username — check server for username
+                try {
+                    const res = await fetch('/api/user/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: existingEmail })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.user && data.user.username) {
+                        localStorage.setItem('user_username', data.user.username);
+                        routeToHub(savedRole, existingEmail);
+                    } else {
+                        showUsernameSetup();
+                    }
+                } catch (e) {
+                    showUsernameSetup();
+                }
+            } else if (existingEmail && !savedRole) {
+                showRoleSelection({
+                    email: existingEmail,
+                    name: localStorage.getItem('user_name'),
+                    picture: localStorage.getItem('user_picture')
+                });
             }
         };
     </script>

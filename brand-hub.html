@@ -12,10 +12,12 @@
 <body>
 
     <script>
-        // Session Check — must be logged in and have brand role
+        // Session Check — must be logged in, have brand role, and have username
         const userEmail = localStorage.getItem('user_email');
         const userRole = localStorage.getItem('user_role');
+        const userUsername = localStorage.getItem('user_username');
         if (!userEmail) location.href = 'index.html';
+        else if (!userUsername) location.href = 'index.html';
         else if (userRole !== 'brand') location.href = 'index.html';
     </script>
 
@@ -56,7 +58,7 @@
                     <div class="vsb-avatar" id="brand-vsb-avatar">B</div>
                     <div class="vsb-user-info">
                         <div class="vsb-user-name" id="brand-vsb-name">Brand</div>
-                        <div class="vsb-user-role">Brand Account</div>
+                        <div class="vsb-user-role" id="brand-vsb-username">Brand Account</div>
                     </div>
                 </div>
                 <button class="vsb-logout" onclick="logout()" title="Logout">
@@ -340,9 +342,12 @@
         function loadBrandSessionDisplay() {
             const name = localStorage.getItem('user_name') || 'Brand';
             const pic  = localStorage.getItem('user_picture');
+            const username = localStorage.getItem('user_username');
             const av   = document.getElementById('brand-vsb-avatar');
             const nm   = document.getElementById('brand-vsb-name');
+            const un   = document.getElementById('brand-vsb-username');
             if (nm) nm.innerText = name.split(' ')[0];
+            if (un && username) un.innerText = '@' + username;
             if (av && pic) { av.style.backgroundImage = `url(${pic})`; av.style.backgroundSize = 'cover'; av.innerText = ''; }
             else if (av) av.innerText = name[0].toUpperCase();
         }

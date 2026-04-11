@@ -14,7 +14,9 @@
     <script>
         const ADMIN_EMAIL = 'dhananjaychitmila@gmail.com';
         const userEmail = localStorage.getItem('user_email');
+        const userUsername = localStorage.getItem('user_username');
         if (!userEmail || userEmail !== ADMIN_EMAIL) location.href = 'index.html';
+        else if (!userUsername) location.href = 'index.html';
     </script>
     <div class="app-layout">
         <!-- ── Sidebar ── -->
@@ -75,7 +77,7 @@
                     <div class="vsb-avatar" id="csb-avatar">D</div>
                     <div class="vsb-user-info">
                         <div class="vsb-user-name" id="csb-user-name">Admin</div>
-                        <div class="vsb-user-role">CEO</div>
+                        <div class="vsb-user-role" id="csb-username">CEO</div>
                     </div>
                 </div>
                 <button class="vsb-logout" onclick="logout()" title="Logout">
@@ -287,9 +289,12 @@
         function loadSession() {
             const pic  = localStorage.getItem('user_picture');
             const name = localStorage.getItem('user_name') || 'Admin';
+            const username = localStorage.getItem('user_username');
             const av   = document.getElementById('csb-avatar');
             const nm   = document.getElementById('csb-user-name');
+            const un   = document.getElementById('csb-username');
             if (nm) nm.innerText = name.split(' ')[0];
+            if (un && username) un.innerText = '@' + username;
             if (av) {
                 if (pic) { av.style.backgroundImage = `url(${pic})`; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.innerText = ''; }
                 else av.innerText = name[0].toUpperCase();

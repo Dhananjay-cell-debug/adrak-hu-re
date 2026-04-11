@@ -15,7 +15,9 @@
         const ADMIN_EMAIL = 'dhananjaychitmila@gmail.com';
         const userEmail = localStorage.getItem('user_email');
         const userRole = localStorage.getItem('user_role');
+        const userUsername = localStorage.getItem('user_username');
         if (!userEmail) location.href = 'index.html';
+        else if (!userUsername) location.href = 'index.html';
         else if (userRole === 'ceo' && userEmail === ADMIN_EMAIL) location.href = 'ceo-hub.html';
         else if (userRole === 'brand') location.href = 'brand-hub.html';
     </script>
@@ -58,7 +60,7 @@
                 <div class="vsb-avatar" id="creator-vsb-avatar">C</div>
                 <div class="vsb-user-info">
                     <div class="vsb-user-name" id="creator-vsb-name">Creator</div>
-                    <div class="vsb-user-role">Creator</div>
+                    <div class="vsb-user-role" id="creator-vsb-username">Creator</div>
                 </div>
             </div>
             <button class="vsb-logout" onclick="logout()" title="Logout">
@@ -690,9 +692,12 @@
         function loadCreatorSessionDisplay() {
             const name = localStorage.getItem('user_name') || 'Creator';
             const pic  = localStorage.getItem('user_picture');
+            const username = localStorage.getItem('user_username');
             const av   = document.getElementById('creator-vsb-avatar');
             const nm   = document.getElementById('creator-vsb-name');
+            const un   = document.getElementById('creator-vsb-username');
             if (nm) nm.innerText = name.split(' ')[0];
+            if (un && username) un.innerText = '@' + username;
             if (av && pic) { av.style.backgroundImage = `url(${pic})`; av.style.backgroundSize = 'cover'; av.innerText = ''; }
             else if (av) av.innerText = name[0].toUpperCase();
             // keep old nav-user-name if present

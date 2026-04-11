@@ -49,6 +49,84 @@ router.post('/register', async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+// USERNAME SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/user/check-username ─────────────────────────────────────────────
+// Check if a username is available
+router.get('/check-username', async (req, res) => {
+    const { username } = req.query;
+    if (!username) return res.status(400).json({ error: 'Username required' });
+
+    const clean = username.toLowerCase().trim();
+
+    // Validate format: 3-20 chars, lowercase letters, numbers, underscores only
+    if (!/^[a-z][a-z0-9_]{2,19}$/.test(clean)) {
+        return res.json({ available: false, reason: 'Username must be 3-20 characters, start with a letter, and contain only lowercase letters, numbers, or underscores.' });
+    }
+
+    // Reserved words
+    const reserved = ['admin', 'velt', 'ceo', 'brand', 'creator', 'support', 'help', 'system', 'null', 'undefined', 'api', 'www', 'root'];
+    if (reserved.includes(clean)) {
+        return res.json({ available: false, reason: 'This username is reserved.' });
+    }
+
+    const { data } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', clean)
+        .limit(1);
+
+    res.json({ available: !data || data.length === 0, username: clean });
+});
+
+// ── POST /api/user/set-username ──────────────────────────────────────────────
+// Set username for a user (one-time or update)
+router.post('/set-username', async (req, res) => {
+    const { email, username } = req.body;
+    if (!email || !username) return res.status(400).json({ error: 'Email and username required' });
+
+    const clean = username.toLowerCase().trim();
+
+    if (!/^[a-z][a-z0-9_]{2,19}$/.test(clean)) {
+        return res.status(400).json({ error: 'Username must be 3-20 characters, start with a letter, and contain only lowercase letters, numbers, or underscores.' });
+    }
+
+    const reserved = ['admin', 'velt', 'ceo', 'brand', 'creator', 'support', 'help', 'system', 'null', 'undefined', 'api', 'www', 'root'];
+    if (reserved.includes(clean)) {
+        return res.status(400).json({ error: 'This username is reserved.' });
+    }
+
+    try {
+        // Check if already taken by someone else
+        const { data: existing } = await supabase
+            .from('users')
+            .select('email')
+            .eq('username', clean)
+            .limit(1);
+
+        if (existing && existing.length > 0 && existing[0].email !== email) {
+            return res.status(409).json({ error: 'Username already taken.' });
+        }
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({ username: clean })
+            .eq('email', email)
+            .select();
+
+        if (error) throw error;
+        res.json({ success: true, username: clean, user: data ? data[0] : null });
+    } catch (err) {
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'Username already taken.' });
+        }
+        console.error('set-username error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 // CREATOR PROFILES
 // ══════════════════════════════════════════════════════════════════════════════
 
